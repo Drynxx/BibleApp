@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Inscribe",
+    "slug": "inscribe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "inscribe",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#121316"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.inscribe.bibleapp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#121316"
+      },
+      "package": "com.inscribe.bibleapp"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}

@@ -1,0 +1,302 @@
+[
+  {
+    "id": "v-1",
+    "book": "Proverbe",
+    "chapter": 3,
+    "verse_number": 3,
+    "translation": "VDC",
+    "text": "Să nu te părăsească bunătatea și credincioșia: leagă-le la gât, scrie-le pe tăblița inimii tale!",
+    "theme": "Înțelepciune",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-1-en",
+    "book": "Proverbs",
+    "chapter": 3,
+    "verse_number": 3,
+    "translation": "WEB",
+    "text": "Don't let kindness and truth forsake you. Bind them around your neck. Write them on the tablet of your heart.",
+    "theme": "Wisdom",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-2",
+    "book": "Psalmii",
+    "chapter": 119,
+    "verse_number": 11,
+    "translation": "VDC",
+    "text": "Strâng Cuvântul Tău în inima mea, ca să nu păcătuiesc împotriva Ta!",
+    "theme": "Cuvânt",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-2-en",
+    "book": "Psalms",
+    "chapter": 119,
+    "verse_number": 11,
+    "translation": "WEB",
+    "text": "I have hidden your word in my heart, that I might not sin against you.",
+    "theme": "Word",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-3",
+    "book": "Filipeni",
+    "chapter": 4,
+    "verse_number": 6,
+    "translation": "VDC",
+    "text": "Nu vă îngrijorați de nimic; ci, în orice lucru, aduceți cererile voastre la cunoștința lui Dumnezeu, prin rugăciuni și cereri, cu mulțumiri.",
+    "theme": "Pace",
+    "difficulty": "hard"
+  },
+  {
+    "id": "v-3-en",
+    "book": "Philippians",
+    "chapter": 4,
+    "verse_number": 6,
+    "translation": "WEB",
+    "text": "In nothing be anxious, but in everything, by prayer and petition with thanksgiving, let your requests be made known to God.",
+    "theme": "Peace",
+    "difficulty": "hard"
+  },
+  {
+    "id": "v-4",
+    "book": "Ioan",
+    "chapter": 14,
+    "verse_number": 27,
+    "translation": "VDC",
+    "text": "Vă las pacea, vă dau pacea Mea. Nu v-o dau cum o dă lumea. Să nu vi se tulbure inima, nici să nu se înspăimânte.",
+    "theme": "Pace",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-4-en",
+    "book": "John",
+    "chapter": 14,
+    "verse_number": 27,
+    "translation": "WEB",
+    "text": "Peace I leave with you. My peace I give to you; not as the world gives, give I to you. Don't let your heart be troubled, neither let it be fearful.",
+    "theme": "Peace",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-5",
+    "book": "Isaia",
+    "chapter": 26,
+    "verse_number": 3,
+    "translation": "VDC",
+    "text": "Celui cu inima tare, Tu-i chezășuiești pacea; da, pacea, pentru că se încrede în Tine.",
+    "theme": "Pace",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-5-en",
+    "book": "Isaiah",
+    "chapter": 26,
+    "verse_number": 3,
+    "translation": "WEB",
+    "text": "You will keep him in perfect peace, whose mind is stayed on you; because he trusts in you.",
+    "theme": "Peace",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-6",
+    "book": "Matei",
+    "chapter": 11,
+    "verse_number": 28,
+    "translation": "VDC",
+    "text": "Veniți la Mine, toți cei trudiți și împovărați, și Eu vă voi da odihnă.",
+    "theme": "Pace",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-6-en",
+    "book": "Matthew",
+    "chapter": 11,
+    "verse_number": 28,
+    "translation": "WEB",
+    "text": "Come to me, all you who labor and are heavily burdened, and I will give you rest.",
+    "theme": "Peace",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-7",
+    "book": "Psalmii",
+    "chapter": 23,
+    "verse_number": 1,
+    "translation": "VDC",
+    "text": "Domnul este Păstorul meu: nu voi duce lipsă de nimic.",
+    "theme": "Pace",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-7-en",
+    "book": "Psalms",
+    "chapter": 23,
+    "verse_number": 1,
+    "translation": "WEB",
+    "text": "Yahweh is my shepherd: I shall lack nothing.",
+    "theme": "Peace",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-8",
+    "book": "Evrei",
+    "chapter": 11,
+    "verse_number": 1,
+    "translation": "VDC",
+    "text": "Și credința este o încredere neclintită în lucrurile nădăjduite, o puternică încredințare despre lucrurile care nu se văd.",
+    "theme": "Credință",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-8-en",
+    "book": "Hebrews",
+    "chapter": 11,
+    "verse_number": 1,
+    "translation": "WEB",
+    "text": "Now faith is assurance of things hoped for, proof of things not seen.",
+    "theme": "Faith",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-9",
+    "book": "Romani",
+    "chapter": 8,
+    "verse_number": 28,
+    "translation": "VDC",
+    "text": "De altă parte, știm că toate lucrurile lucrează împreună spre binele celor ce iubesc pe Dumnezeu, adică spre binele celor ce sunt chemați după planul Său.",
+    "theme": "Credință",
+    "difficulty": "hard"
+  },
+  {
+    "id": "v-9-en",
+    "book": "Romans",
+    "chapter": 8,
+    "verse_number": 28,
+    "translation": "WEB",
+    "text": "We know that all things work together for good for those who love God, to those who are called according to his purpose.",
+    "theme": "Faith",
+    "difficulty": "hard"
+  },
+  {
+    "id": "v-10",
+    "book": "2 Corinteni",
+    "chapter": 5,
+    "verse_number": 7,
+    "translation": "VDC",
+    "text": "Pentru că umblăm prin credință, nu prin vedere.",
+    "theme": "Credință",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-10-en",
+    "book": "2 Corinthians",
+    "chapter": 5,
+    "verse_number": 7,
+    "translation": "WEB",
+    "text": "For we walk by faith, not by sight.",
+    "theme": "Faith",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-11",
+    "book": "Marcu",
+    "chapter": 9,
+    "verse_number": 23,
+    "translation": "VDC",
+    "text": "Isus i-a răspuns: „Tu zici: «Dacă poți!»... Toate lucrurile sunt cu putință celui ce crede!”",
+    "theme": "Credință",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-11-en",
+    "book": "Mark",
+    "chapter": 9,
+    "verse_number": 23,
+    "translation": "WEB",
+    "text": "Jesus said to him, \"If you can believe, all things are possible to him who believes.\"",
+    "theme": "Faith",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-12",
+    "book": "Proverbe",
+    "chapter": 3,
+    "verse_number": 5,
+    "translation": "VDC",
+    "text": "Încrede-te în Domnul din toată inima ta, și nu te bizui pe înțelepciunea ta!",
+    "theme": "Credință",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-12-en",
+    "book": "Proverbs",
+    "chapter": 3,
+    "verse_number": 5,
+    "translation": "WEB",
+    "text": "Trust in Yahweh with all your heart, and don't lean on your own understanding.",
+    "theme": "Faith",
+    "difficulty": "medium"
+  },
+  {
+    "id": "v-13",
+    "book": "Psalmii",
+    "chapter": 119,
+    "verse_number": 9,
+    "translation": "VDC",
+    "text": "Cum își va ține tânărul curată cărarea? Îndreptându-se după Cuvântul Tău.",
+    "theme": "Curăție",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-13-en",
+    "book": "Psalms",
+    "chapter": 119,
+    "verse_number": 9,
+    "translation": "WEB",
+    "text": "How can a young man keep his way pure? By living according to your word.",
+    "theme": "Purity",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-14",
+    "book": "Filipeni",
+    "chapter": 4,
+    "verse_number": 8,
+    "translation": "VDC",
+    "text": "Încolo, frații mei, tot ce este adevărat, tot ce este vrednic de cinste, tot ce este drept, tot ce este curat, tot ce este vrednic de iubit, tot ce este vrednic de primit, orice faptă bună și orice laudă, aceea să vă însuflețească.",
+    "theme": "Curăție",
+    "difficulty": "hard"
+  },
+  {
+    "id": "v-14-en",
+    "book": "Philippians",
+    "chapter": 4,
+    "verse_number": 8,
+    "translation": "WEB",
+    "text": "Finally, brothers, whatever things are true, whatever things are honorable, whatever things are just, whatever things are pure, whatever things are lovely, whatever things are of good report; if there is any virtue, and if there is any praise, think about these things.",
+    "theme": "Purity",
+    "difficulty": "hard"
+  },
+  {
+    "id": "v-15",
+    "book": "Psalmii",
+    "chapter": 51,
+    "verse_number": 10,
+    "translation": "VDC",
+    "text": "Zidește în mine o inimă curată, Dumnezeule, pune în mine un duh nou și statornic!",
+    "theme": "Curăție",
+    "difficulty": "easy"
+  },
+  {
+    "id": "v-15-en",
+    "book": "Psalms",
+    "chapter": 51,
+    "verse_number": 10,
+    "translation": "WEB",
+    "text": "Create in me a clean heart, O God. Renew a right spirit within me.",
+    "theme": "Purity",
+    "difficulty": "easy"
+  }
+]

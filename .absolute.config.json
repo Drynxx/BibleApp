@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "conventions": {
+    "defaultBranch": "main"
+  },
+  "preferences": {
+    "outputStyle": "normal",
+    "autonomy": "gate-all",
+    "tdd": "strict",
+    "specDir": "docs/plans",
+    "boardTracking": "gitignored",
+    "families": [
+      "build"
+    ]
+  }
+}
