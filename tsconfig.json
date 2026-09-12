@@ -1,35 +1,28 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "target": "esnext",
-    "module": "commonjs",
-    "lib": [
-      "es2022"
-    ],
-    "allowJs": true,
-    "jsx": "react-native",
-    "noEmit": true,
-    "isolatedModules": true,
     "strict": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
+    "rootDir": ".",
+    "types": [
+      "jest",
+      "node"
+    ],
     "paths": {
       "@/*": [
-        "src/*"
+        "./*"
       ]
     }
   },
   "include": [
-    "src/**/*",
-    "__tests__/**/*",
-    "App.tsx"
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist"
-  ],
-  "extends": "expo/tsconfig.base"
+    "Inscribe-TT",
+    "Antigravity Frontend",
+    "__tests__"
+  ]
 }

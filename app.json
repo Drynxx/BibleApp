@@ -6,10 +6,6 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "inscribe",
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#121316"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.inscribe.bibleapp"
@@ -21,9 +17,16 @@
       "package": "com.inscribe.bibleapp"
     },
     "plugins": [
+      "expo-router",
       "expo-sqlite",
       "expo-asset",
-      "expo-font"
-    ]
+      "expo-font",
+      "expo-secure-store",
+      "expo-splash-screen",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }
