@@ -92,7 +92,7 @@ export default function ProgressScreen() {
             <Leaf color={Palette.gold} size={28} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
           </View>
           <View>
-            <Text style={styles.brandTitle}>Verse</Text>
+            <Text style={styles.brandTitle}>Inscribe</Text>
             <Text style={styles.brandSubtitle}>SMALL STEPS. DEEPER FAITH.</Text>
           </View>
         </Pressable>

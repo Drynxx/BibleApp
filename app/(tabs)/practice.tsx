@@ -18,15 +18,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Palette, Typography } from '@/constants/theme';
 import { useCovenant } from '../../src/services/covenantContext';
+import { useTranslation } from 'react-i18next';
 
-const reference = 'Romans 8:28';
-const before = 'And we know that in all things God works for the';
-const middle = 'of those who';
-const after = 'him';
-const answers = ['good', 'love'];
-const options = ['good', 'love', 'glory', 'fear', 'serve'];
+const verses = {
+  en: {
+    reference: 'Romans 8:28',
+    before: 'And we know that in all things God works for the',
+    middle: 'of those who',
+    after: 'him',
+    answers: ['good', 'love'],
+    options: ['good', 'love', 'glory', 'fear', 'serve']
+  },
+  ro: {
+    reference: 'Romani 8:28',
+    before: 'De altă parte, știm că toate lucrurile lucrează spre',
+    middle: 'celor ce',
+    after: 'pe Dumnezeu',
+    answers: ['binele', 'iubesc'],
+    options: ['binele', 'iubesc', 'slava', 'frica', 'slujesc']
+  }
+};
 
 export default function PracticeScreen() {
+  const { i18n } = useTranslation();
+  const lang = (i18n.language === 'ro') ? 'ro' : 'en';
+  const { reference, before, middle, after, answers, options } = verses[lang];
+
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -100,7 +117,7 @@ export default function PracticeScreen() {
             <Leaf color={Palette.gold} size={28} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
           </View>
           <View>
-            <Text style={styles.brandTitle}>Verse</Text>
+            <Text style={styles.brandTitle}>Inscribe</Text>
             <Text style={styles.brandSubtitle}>SMALL STEPS. DEEPER FAITH.</Text>
           </View>
         </Pressable>

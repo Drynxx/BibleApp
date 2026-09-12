@@ -80,7 +80,7 @@ export default function HomeScreen() {
             <Leaf color={Palette.gold} size={30} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
           </View>
           <View>
-            <Text style={styles.brandTitle}>Verse</Text>
+            <Text style={styles.brandTitle}>Inscribe</Text>
             <Text style={styles.brandSubtitle}>SMALL STEPS. DEEPER FAITH.</Text>
           </View>
         </View>

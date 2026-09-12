@@ -1,0 +1,26 @@
+{
+  "login": {
+    "title": "Inscribe",
+    "subtitle": "Scrie Cuvântul în inima ta. Păstrează-ți focul.",
+    "googleBtn": "Continuă cu Google",
+    "emailBtn": "Continuă cu Email",
+    "emailLabel": "Care este adresa ta de email?",
+    "sendCode": "Trimite codul",
+    "back": "Înapoi",
+    "otpLabel": "Introdu codul de 6 cifre trimis la {{email}}",
+    "diffEmail": "Folosește un alt email",
+    "invalidEmail": "Te rugăm să introduci un email valid.",
+    "switchLang": "EN"
+  },
+  "tabs": {
+    "home": "Acasă",
+    "practice": "Practică",
+    "progress": "Progres",
+    "profile": "Profil"
+  },
+  "profile": {
+    "title": "Profil",
+    "language": "Limbă",
+    "signOut": "Deconectare"
+  }
+}

@@ -1,34 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  Pressable, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback,
+  ScrollView,
   Keyboard
 } from 'react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useAuth } from '../src/services/authContext';
 import { Typography } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSpring, 
-  FadeInDown, 
+import { useTranslation } from 'react-i18next';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  FadeInDown,
   FadeOutUp,
   FadeIn
 } from 'react-native-reanimated';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
-// Setup Google Sign In (Note: Requires proper client ID in production)
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '', 
-  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '',
-});
 
 // Reanimated Button Component
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -51,7 +46,7 @@ const SpringButton: React.FC<SpringButtonProps> = ({ onPress, children, style, d
     if (disabled) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
+    } catch { }
     scale.value = withSpring(0.97, { damping: 12, stiffness: 200 });
   };
 
@@ -75,13 +70,26 @@ const SpringButton: React.FC<SpringButtonProps> = ({ onPress, children, style, d
 
 // Main Login Screen
 export default function LoginScreen() {
+  const videoSource = require('../Paper_pages_rustling_in_breeze_20260912153325.mp4');
+  const player = useVideoPlayer(videoSource, player => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
+
   const { signInWithGoogle, signInWithOtp, verifyOtp } = useAuth();
-  
+  const { t, i18n } = useTranslation();
+
   const [mode, setMode] = useState<'IDLE' | 'EMAIL_INPUT' | 'OTP_INPUT'>('IDLE');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const toggleLanguage = () => {
+    const nextLang = i18n.language === 'ro' ? 'en' : 'ro';
+    i18n.changeLanguage(nextLang);
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -93,7 +101,7 @@ export default function LoginScreen() {
 
   const handleSendOtp = async () => {
     if (!email || !email.includes('@')) {
-      setError('Please enter a valid email.');
+      setError(t('login.invalidEmail'));
       return;
     }
     setLoading(true);
@@ -121,17 +129,34 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.inner}>
-          
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <VideoView
+        style={{ position: 'absolute', width: '100%', height: '100%' }}
+        player={player}
+        nativeControls={false}
+        contentFit="cover"
+      />
+      {/* Dark overlay to ensure text readability */}
+      <View style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(9, 9, 11, 0.5)' }} />
+
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={styles.inner}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+
           {/* Header */}
+          <Pressable onPress={toggleLanguage} style={styles.langToggle}>
+            <Text style={styles.langToggleText}>{t('login.switchLang')}</Text>
+          </Pressable>
+
           <View style={styles.header}>
-            <Text style={styles.title}>Inscribe</Text>
-            <Text style={styles.subtitle}>Memorize together. Stay on fire.</Text>
+            <Text style={styles.title}>{t('login.title')}</Text>
+            <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
           </View>
 
           {/* Dynamic Content Area */}
@@ -139,18 +164,18 @@ export default function LoginScreen() {
             {mode === 'IDLE' && (
               <Animated.View entering={FadeInDown.springify().damping(14)} exiting={FadeOutUp} style={styles.modeView}>
                 <SpringButton style={styles.googleButton} onPress={handleGoogleLogin} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#09090B" /> : <Text style={styles.googleButtonText}>Continue with Google</Text>}
+                  {loading ? <ActivityIndicator color="#09090B" /> : <Text style={styles.googleButtonText}>{t('login.googleBtn')}</Text>}
                 </SpringButton>
 
                 <SpringButton style={styles.emailButton} onPress={() => setMode('EMAIL_INPUT')} disabled={loading}>
-                  <Text style={styles.emailButtonText}>Continue with Email</Text>
+                  <Text style={styles.emailButtonText}>{t('login.emailBtn')}</Text>
                 </SpringButton>
               </Animated.View>
             )}
 
             {mode === 'EMAIL_INPUT' && (
               <Animated.View entering={FadeInDown.springify().damping(14)} exiting={FadeOutUp} style={styles.modeView}>
-                <Text style={styles.inputLabel}>What's your email?</Text>
+                <Text style={styles.inputLabel}>{t('login.emailLabel')}</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="name@example.com"
@@ -162,19 +187,19 @@ export default function LoginScreen() {
                   autoFocus
                 />
                 <SpringButton style={styles.googleButton} onPress={handleSendOtp} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#09090B" /> : <Text style={styles.googleButtonText}>Send Code</Text>}
+                  {loading ? <ActivityIndicator color="#09090B" /> : <Text style={styles.googleButtonText}>{t('login.sendCode')}</Text>}
                 </SpringButton>
-                
+
                 <Pressable style={styles.backButton} onPress={() => { setMode('IDLE'); setError(''); }}>
-                  <Text style={styles.backButtonText}>Back</Text>
+                  <Text style={styles.backButtonText}>{t('login.back')}</Text>
                 </Pressable>
               </Animated.View>
             )}
 
             {mode === 'OTP_INPUT' && (
               <Animated.View entering={FadeInDown.springify().damping(14)} exiting={FadeOutUp} style={styles.modeView}>
-                <Text style={styles.inputLabel}>Enter the 6-digit code sent to {email}</Text>
-                
+                <Text style={styles.inputLabel}>{t('login.otpLabel', { email })}</Text>
+
                 <View style={styles.otpContainer}>
                   {[0, 1, 2, 3, 4, 5].map((index) => {
                     const digit = otp[index] || '';
@@ -185,7 +210,7 @@ export default function LoginScreen() {
                     );
                   })}
                 </View>
-                
+
                 {/* Hidden input to handle keyboard easily */}
                 <TextInput
                   style={styles.hiddenInput}
@@ -204,9 +229,9 @@ export default function LoginScreen() {
                 />
 
                 {loading && <ActivityIndicator color="#F4F4F5" style={{ marginTop: 20 }} />}
-                
+
                 <Pressable style={[styles.backButton, { marginTop: 24 }]} onPress={() => { setMode('EMAIL_INPUT'); setOtp(''); setError(''); }}>
-                  <Text style={styles.backButtonText}>Use a different email</Text>
+                  <Text style={styles.backButtonText}>{t('login.diffEmail')}</Text>
                 </Pressable>
               </Animated.View>
             )}
@@ -218,16 +243,16 @@ export default function LoginScreen() {
             ) : null}
           </View>
 
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#09090B', // Deep Zinc
+    backgroundColor: 'transparent',
   },
   inner: {
     flex: 1,
@@ -238,19 +263,37 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginTop: 60,
+    marginTop: 120, // Pushed down
+  },
+  langToggle: {
+    position: 'absolute',
+    top: 40,
+    right: 24,
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  langToggleText: {
+    color: '#F4F4F5',
+    fontFamily: Typography.sansMedium,
+    fontSize: 14,
   },
   title: {
     fontFamily: Typography.serifMedium,
-    fontSize: 42,
+    fontSize: 52, // Accentuated dimension
     color: '#F4F4F5', // zinc-100
-    marginBottom: 12,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   subtitle: {
     fontFamily: Typography.sans,
-    fontSize: 16,
+    fontSize: 18, // Accentuated dimension
     color: '#A1A1AA', // zinc-400
     letterSpacing: 0.5,
+    textAlign: 'center',
+    lineHeight: 26,
+    paddingHorizontal: 20,
   },
   formContainer: {
     width: '100%',

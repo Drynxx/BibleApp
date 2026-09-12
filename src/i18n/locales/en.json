@@ -1,0 +1,26 @@
+{
+  "login": {
+    "title": "Inscribe",
+    "subtitle": "Write the Word on your heart. Stay on fire.",
+    "googleBtn": "Continue with Google",
+    "emailBtn": "Continue with Email",
+    "emailLabel": "What's your email?",
+    "sendCode": "Send Code",
+    "back": "Back",
+    "otpLabel": "Enter the 6-digit code sent to {{email}}",
+    "diffEmail": "Use a different email",
+    "invalidEmail": "Please enter a valid email.",
+    "switchLang": "RO"
+  },
+  "tabs": {
+    "home": "Home",
+    "practice": "Practice",
+    "progress": "Progress",
+    "profile": "Profile"
+  },
+  "profile": {
+    "title": "Profile",
+    "language": "Language",
+    "signOut": "Sign Out"
+  }
+}

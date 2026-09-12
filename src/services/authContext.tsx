@@ -8,6 +8,12 @@ import React, {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "./supabase";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
+import { Platform, Alert } from "react-native";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export interface UserProfile {
   id: string;
@@ -16,6 +22,7 @@ export interface UserProfile {
   avatarUrl?: string;
   inviteCode: string;
   longestStreak: number;
+  preferredLanguage?: string;
 }
 
 interface AuthContextType {
@@ -30,6 +37,7 @@ interface AuthContextType {
   verifyOtp: (email: string, token: string) => Promise<{ error?: string }>;
   signInDemo: (displayName?: string, email?: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateLanguage: (lang: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -122,6 +130,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           avatarUrl: data.avatar_url,
           inviteCode: data.invite_code || "INSC-7X9P",
           longestStreak: data.longest_streak || 0,
+          preferredLanguage: data.preferred_language || "en",
         });
       } else {
         // Fallback default
@@ -134,6 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             "Disciple",
           inviteCode: `INSC-${currentUser.id.substring(0, 4).toUpperCase()}`,
           longestStreak: 0,
+          preferredLanguage: "en",
         });
       }
     } catch {
@@ -156,10 +166,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await signInDemo("Google User", "scholar@inscribe.app");
         return {};
       }
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-      });
-      if (error) return { error: error.message };
+      
+      const redirectTo = makeRedirectUri();
+      
+      if (Platform.OS === 'web') {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo },
+        });
+        if (error) return { error: error.message };
+      } else {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo,
+            skipBrowserRedirect: true,
+          },
+        });
+        if (error) return { error: error.message };
+        
+        if (data?.url) {
+          const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+          if (res.type === 'success' && res.url) {
+            const hash = res.url.split('#')[1];
+            if (hash) {
+              const params = new URLSearchParams(hash);
+              const access_token = params.get('access_token');
+              const refresh_token = params.get('refresh_token');
+              if (access_token && refresh_token) {
+                await supabase.auth.setSession({ access_token, refresh_token });
+              }
+            }
+          }
+        }
+      }
       return {};
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Google sign-in failed";
@@ -262,6 +302,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProfile(null);
   };
 
+  const updateLanguage = async (lang: string) => {
+    if (!user || !isSupabaseConfigured) return {};
+    
+    // Update local state optimistically
+    if (profile) {
+      setProfile({ ...profile, preferredLanguage: lang });
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ preferred_language: lang })
+      .eq('id', user.id);
+      
+    if (error) {
+       console.error("Error updating language in DB", error);
+       return { error: error.message };
+    }
+    return {};
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -276,6 +336,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         verifyOtp,
         signInDemo,
         signOut,
+        updateLanguage,
       }}
     >
       {children}

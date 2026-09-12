@@ -18,6 +18,7 @@ import 'react-native-reanimated';
 
 import { Palette } from '@/constants/theme';
 import { AuthProvider, useAuth } from '../src/services/authContext';
+import '../src/i18n';
 
 export { ErrorBoundary } from 'expo-router';
 

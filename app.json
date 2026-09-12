@@ -23,7 +23,8 @@
       "expo-font",
       "expo-secure-store",
       "expo-splash-screen",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
