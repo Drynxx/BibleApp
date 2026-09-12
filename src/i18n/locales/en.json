@@ -22,5 +22,73 @@
     "title": "Profile",
     "language": "Language",
     "signOut": "Sign Out"
+  },
+  "home": {
+    "covenant": "My Covenant",
+    "partner": "Partner",
+    "reviewTitle": "Review today's verse",
+    "startPractice": "Start Practice",
+    "startToday": "Start today’s verse",
+    "completed": "Completed",
+    "continueJourney": "Continue your journey",
+    "keepStreak": "Keep your streak alive",
+    "explore": "Explore",
+    "newCollection": "Ready for a new collection?",
+    "sevenVerses": "7 VERSES",
+    "loveChanges": "A LOVE THAT CHANGES EVERYTHING",
+    "verseQuote": "“For God so loved the world, that he gave his one and only Son...”",
+    "goodMorning": "Good morning",
+    "dayStreak": "Day {{streak}} streak",
+    "streakDays": "{{streak}} days"
+  },
+  "progress": {
+    "subtitle": "SMALL STEPS. DEEPER FAITH.",
+    "versesMemorized": "verses memorized",
+    "caption": "A BRIGHTER YOU, DAY BY DAY.",
+    "partnerTitle": "Accountability Partner",
+    "partnerSubtitle": "COVENANT STATUS",
+    "practiceTitle": "Practice Days",
+    "daysMonth": "DAYS THIS MONTH",
+    "dayStreak": "DAY STREAK",
+    "quote": "Consistency builds a brighter tomorrow",
+    "achievements": "Achievements",
+    "seeAll": "See all",
+    "mastered": "Recently Mastered",
+    "october": "October 2024",
+    "november": "November 2024",
+    "december": "December 2024",
+    "sun": "Sun", "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat",
+    "achievement_7day": "7-Day Streak",
+    "achievement_firstBook": "First Book Complete",
+    "achievement_nightOwl": "Night Owl",
+    "achievement_psalmsMaster": "Psalms Master",
+    "mastered_philippians": "Philippians 4:13",
+    "mastered_psalm": "Psalm 23:1",
+    "mastered_jeremiah": "Jeremiah 29:11"
+  },
+  "practice": {
+    "check": "Check",
+    "continue": "Continue",
+    "next": "Next",
+    "wellDone": "Well done!",
+    "tapWord": "Tap a word to fill in the blanks",
+    "feedbackCorrect": "Well done — that's exactly right.",
+    "feedbackWrong": "Not quite. Try those blanks again.",
+    "saving": "Saving...",
+    "correct": "Correct",
+    "checkAnswer": "Check answer"
+  },
+  "verse": {
+    "detail": "Verse Detail",
+    "translation": "NIV",
+    "memorized": "memorized",
+    "keepGoing": "KEEP GOING",
+    "reflection": "REFLECTION",
+    "continue": "Continue practicing"
+  },
+  "collections": {
+    "psalms": "Psalms of\nComfort",
+    "fruit": "Fruit of\nthe Spirit",
+    "proverbs": "Proverbs\nWisdom"
   }
 }

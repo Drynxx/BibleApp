@@ -40,7 +40,7 @@ const verses = {
 };
 
 export default function PracticeScreen() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const lang = (i18n.language === 'ro') ? 'ro' : 'en';
   const { reference, before, middle, after, answers, options } = verses[lang];
 
@@ -71,8 +71,8 @@ export default function PracticeScreen() {
       prev.includes(word)
         ? prev.filter((w) => w !== word)
         : prev.length < answers.length
-        ? [...prev, word]
-        : prev,
+          ? [...prev, word]
+          : prev,
     );
   };
 
@@ -82,13 +82,13 @@ export default function PracticeScreen() {
       try {
         await completeDailyReview();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
+      } catch { }
       setResult('correct');
       setSubmitting(false);
     } else {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      } catch {}
+      } catch { }
       setResult('wrong');
     }
   };
@@ -96,7 +96,7 @@ export default function PracticeScreen() {
   const reset = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
+    } catch { }
     setPicked([]);
     setResult('idle');
   };
@@ -177,7 +177,7 @@ export default function PracticeScreen() {
         </Text>
       </View>
 
-      <Text style={styles.instructionText}>Tap a word to fill in the blanks</Text>
+      <Text style={styles.instructionText}>{('practice.tapWord', 'Tap a word to fill in the blanks')}</Text>
 
       {/* Word options */}
       <View style={styles.optionsWrap}>
@@ -215,8 +215,8 @@ export default function PracticeScreen() {
           ]}
         >
           {result === 'correct'
-            ? "Well done — that's exactly right."
-            : 'Not quite. Try those blanks again.'}
+            ? t('practice.feedbackCorrect', "Well done — that's exactly right.")
+            : t('practice.feedbackWrong', 'Not quite. Try those blanks again.')}
         </Text>
       )}
 
@@ -233,14 +233,14 @@ export default function PracticeScreen() {
           onPress={handleCheck}
         >
           {submitting ? (
-            <Text style={styles.checkButtonText}>Saving...</Text>
+            <Text style={styles.checkButtonText}>{t('practice.saving', 'Saving...')}</Text>
           ) : result === 'correct' ? (
             <View style={styles.buttonInner}>
               <Check color="#FFFFFF" size={20} strokeWidth={2.5} />
-              <Text style={styles.checkButtonText}>Correct</Text>
+              <Text style={styles.checkButtonText}>{t('practice.correct', 'Correct')}</Text>
             </View>
           ) : (
-            <Text style={styles.checkButtonText}>Check answer</Text>
+            <Text style={styles.checkButtonText}>{t('practice.checkAnswer', 'Check answer')}</Text>
           )}
         </Pressable>
 

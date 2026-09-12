@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 
 import { Palette, Typography } from '@/constants/theme';
 
@@ -25,6 +26,7 @@ const C = 2 * Math.PI * R;
 export default function VerseDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
   const [animatedProgress, setAnimatedProgress] = useState(0);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export default function VerseDetailScreen() {
           <ArrowLeft color={Palette.foreground} size={22} />
         </Pressable>
 
-        <Text style={styles.headerTitle}>Verse Detail</Text>
+        <Text style={styles.headerTitle}>{t('verse.detail', 'Verse Detail')}</Text>
 
         <Pressable
           style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
@@ -71,7 +73,7 @@ export default function VerseDetailScreen() {
           <Text style={styles.goldBadgeText}>JOHN 3:16</Text>
         </View>
         <View style={styles.tagDivider} />
-        <Text style={styles.translationText}>NIV</Text>
+        <Text style={styles.translationText}>{t('verse.translation', 'NIV')}</Text>
       </View>
 
       {/* Verse Scripture Text */}
@@ -113,8 +115,8 @@ export default function VerseDetailScreen() {
         <View style={styles.cardDivider} />
 
         <View style={styles.progressInfo}>
-          <Text style={styles.progressLabel}>{PROGRESS}% memorized</Text>
-          <Text style={styles.progressSub}>KEEP GOING</Text>
+          <Text style={styles.progressLabel}>{PROGRESS}% {t('verse.memorized', 'memorized')}</Text>
+          <Text style={styles.progressSub}>{t('verse.keepGoing', 'KEEP GOING')}</Text>
         </View>
       </View>
 
@@ -123,7 +125,7 @@ export default function VerseDetailScreen() {
         <View style={styles.reflectionBlob} />
         <View style={styles.reflectionHeader}>
           <Leaf color={Palette.gold} size={20} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
-          <Text style={styles.reflectionTitle}>REFLECTION</Text>
+          <Text style={styles.reflectionTitle}>{t('verse.reflection', 'REFLECTION')}</Text>
         </View>
         <Text style={styles.reflectionBody}>
           This verse is the heart of the gospel — God’s love expressed through sacrifice.
@@ -138,7 +140,7 @@ export default function VerseDetailScreen() {
         ]}
         onPress={() => router.push('/practice')}
       >
-        <Text style={styles.ctaText}>Continue practicing</Text>
+        <Text style={styles.ctaText}>{t('verse.continue', 'Continue practicing')}</Text>
         <ArrowRight color="#FFFFFF" size={20} strokeWidth={2} style={styles.ctaArrow} />
       </Pressable>
     </ScrollView>

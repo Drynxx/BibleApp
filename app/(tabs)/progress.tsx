@@ -19,6 +19,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { Palette, Typography } from '@/constants/theme';
 import { useCovenant } from '../../src/services/covenantContext';
@@ -33,44 +34,63 @@ const activity = [
   0, 0, 1, 0, 0, 1, 0,
 ];
 
-const achievements = [
-  {
-    label: '7-Day Streak',
-    Icon: Flame,
-    bg: Palette.primaryLight,
-    medallion: 'rgba(158, 67, 36, 0.18)',
-    iconColor: Palette.primary,
-  },
-  {
-    label: 'First Book Complete',
-    Icon: BookOpen,
-    bg: Palette.goldLight,
-    medallion: 'rgba(198, 139, 53, 0.22)',
-    iconColor: Palette.gold,
-  },
-  {
-    label: 'Night Owl',
-    Icon: Moon,
-    bg: Palette.sageLight,
-    medallion: 'rgba(90, 119, 94, 0.25)',
-    iconColor: Palette.sage,
-  },
-  {
-    label: 'Psalms Master',
-    Icon: Crown,
-    bg: Palette.goldLight,
-    medallion: 'rgba(198, 139, 53, 0.22)',
-    iconColor: Palette.gold,
-  },
-];
-
-const mastered = ['Philippians 4:13', 'Psalm 23:1', 'Jeremiah 29:11'];
-
 export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const achievements = [
+    {
+      label: t('progress.achievement_7day', '7-Day Streak'),
+      Icon: Flame,
+      bg: Palette.primaryLight,
+      medallion: 'rgba(158, 67, 36, 0.18)',
+      iconColor: Palette.primary,
+    },
+    {
+      label: t('progress.achievement_firstBook', 'First Book Complete'),
+      Icon: BookOpen,
+      bg: Palette.goldLight,
+      medallion: 'rgba(198, 139, 53, 0.22)',
+      iconColor: Palette.gold,
+    },
+    {
+      label: t('progress.achievement_nightOwl', 'Night Owl'),
+      Icon: Moon,
+      bg: Palette.sageLight,
+      medallion: 'rgba(90, 119, 94, 0.25)',
+      iconColor: Palette.sage,
+    },
+    {
+      label: t('progress.achievement_psalmsMaster', 'Psalms Master'),
+      Icon: Crown,
+      bg: Palette.goldLight,
+      medallion: 'rgba(198, 139, 53, 0.22)',
+      iconColor: Palette.gold,
+    },
+  ];
+
+  const mastered = [
+    t('progress.mastered_philippians', 'Philippians 4:13'),
+    t('progress.mastered_psalm', 'Psalm 23:1'),
+    t('progress.mastered_jeremiah', 'Jeremiah 29:11')
+  ];
   const [monthIndex, setMonthIndex] = useState(1);
-  const currentMonth = months[monthIndex] ?? 'November 2024';
+  const months = [
+    t('progress.october', 'October 2024'),
+    t('progress.november', 'November 2024'),
+    t('progress.december', 'December 2024')
+  ];
+  const weekdays = [
+    t('progress.sun', 'Sun'),
+    t('progress.mon', 'Mon'),
+    t('progress.tue', 'Tue'),
+    t('progress.wed', 'Wed'),
+    t('progress.thu', 'Thu'),
+    t('progress.fri', 'Fri'),
+    t('progress.sat', 'Sat')
+  ];
+  const currentMonth = months[monthIndex] ?? months[1];
 
   const { partnerProfile, partnerTodayReview } = useCovenant();
   const partnerName = partnerProfile?.display_name || 'Your Partner';
@@ -92,8 +112,8 @@ export default function ProgressScreen() {
             <Leaf color={Palette.gold} size={28} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
           </View>
           <View>
-            <Text style={styles.brandTitle}>Inscribe</Text>
-            <Text style={styles.brandSubtitle}>SMALL STEPS. DEEPER FAITH.</Text>
+            <Text style={styles.brandTitle}>{t('login.title', 'Inscribe')}</Text>
+            <Text style={styles.brandSubtitle}>{t('progress.subtitle', 'SMALL STEPS. DEEPER FAITH.')}</Text>
           </View>
         </Pressable>
 
@@ -108,8 +128,8 @@ export default function ProgressScreen() {
       {/* Hero Stats */}
       <View style={styles.heroSection}>
         <Text style={styles.heroNumber}>47</Text>
-        <Text style={styles.heroLabel}>verses memorized</Text>
-        <Text style={styles.heroCaption}>A BRIGHTER YOU, DAY BY DAY.</Text>
+        <Text style={styles.heroLabel}>{t('progress.versesMemorized', 'verses memorized')}</Text>
+        <Text style={styles.heroCaption}>{t('progress.caption', 'A BRIGHTER YOU, DAY BY DAY.')}</Text>
 
         <View style={styles.watermarkWrapper}>
           <Leaf color={Palette.gold} size={90} strokeWidth={1.2} style={{ opacity: 0.22, transform: [{ rotate: '25deg' }] }} />
@@ -121,12 +141,12 @@ export default function ProgressScreen() {
         <View style={[styles.card, { marginTop: 24 }]}>
           <View style={styles.cardHeader}>
             <View>
-              <Text style={styles.cardTitle}>Accountability Partner</Text>
-              <Text style={styles.cardSubtitle}>COVENANT STATUS</Text>
+              <Text style={styles.cardTitle}>{t('progress.partnerTitle', 'Accountability Partner')}</Text>
+              <Text style={styles.cardSubtitle}>{t('progress.partnerSubtitle', 'COVENANT STATUS')}</Text>
             </View>
             <View style={[styles.monthPill, partnerDone ? { backgroundColor: Palette.primary } : {}]}>
               <Text style={[styles.monthPillText, partnerDone ? { color: '#FFF' } : {}]}>
-                {partnerDone ? 'Done Today' : 'Waiting...'}
+                {partnerDone ? 'Done' : 'Pending'}
               </Text>
             </View>
           </View>
@@ -147,7 +167,7 @@ export default function ProgressScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View>
-            <Text style={styles.cardTitle}>Practice Days</Text>
+            <Text style={styles.cardTitle}>{t('progress.practiceTitle', 'Practice Days')}</Text>
             <Text style={styles.cardSubtitle}>{currentMonth.toUpperCase()}</Text>
           </View>
 
@@ -210,16 +230,16 @@ export default function ProgressScreen() {
           {/* Vertical divider and side stats */}
           <View style={styles.sideStats}>
             <Text style={styles.sideStatNumber}>18</Text>
-            <Text style={styles.sideStatLabel}>DAYS THIS MONTH</Text>
+            <Text style={styles.sideStatLabel}>{t('progress.daysMonth', 'DAYS THIS MONTH')}</Text>
 
             <View style={styles.goldLine} />
 
             <Text style={styles.sideStatNumber}>5</Text>
-            <Text style={styles.sideStatLabel}>DAY STREAK</Text>
+            <Text style={styles.sideStatLabel}>{t('progress.dayStreak', 'DAY STREAK')}</Text>
 
             <View style={styles.goldLine} />
 
-            <Text style={styles.sideStatQuote}>Consistency builds a brighter tomorrow</Text>
+            <Text style={styles.sideStatQuote}>{t('progress.quote', 'Consistency builds a brighter tomorrow')}</Text>
           </View>
         </View>
       </View>
@@ -227,9 +247,9 @@ export default function ProgressScreen() {
       {/* Achievements Section */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Achievements</Text>
+          <Text style={styles.sectionTitle}>{t('progress.achievements', 'Achievements')}</Text>
           <Pressable style={styles.seeAllRow}>
-            <Text style={styles.seeAllText}>See all</Text>
+            <Text style={styles.seeAllText}>{t('progress.seeAll', 'See all')}</Text>
             <ChevronRight color={Palette.primary} size={16} />
           </Pressable>
         </View>
@@ -252,9 +272,9 @@ export default function ProgressScreen() {
       {/* Recently Mastered Section */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Recently Mastered</Text>
+          <Text style={styles.sectionTitle}>{t('progress.mastered', 'Recently Mastered')}</Text>
           <Pressable style={styles.seeAllRow}>
-            <Text style={styles.seeAllText}>See all</Text>
+            <Text style={styles.seeAllText}>{t('progress.seeAll', 'See all')}</Text>
             <ChevronRight color={Palette.primary} size={16} />
           </Pressable>
         </View>
