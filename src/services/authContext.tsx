@@ -90,6 +90,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     loadSession();
 
+    // Handle deep links from magic links
+    const handleDeepLink = async (event: Linking.EventType) => {
+      const url = event.url;
+      if (url && (url.includes('#access_token=') || url.includes('#refresh_token='))) {
+        const hashParams = url.split('#')[1];
+        if (hashParams) {
+          const params = new URLSearchParams(hashParams);
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+          if (access_token && refresh_token) {
+            await supabase.auth.setSession({ access_token, refresh_token });
+          }
+        }
+      }
+    };
+
+    const linkSubscription = Linking.addEventListener('url', handleDeepLink);
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink({ url });
+    });
+
     let authListener: { subscription: { unsubscribe: () => void } } | null = null;
     if (isSupabaseConfigured) {
       const { data } = supabase.auth.onAuthStateChange(
@@ -111,6 +132,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       mounted = false;
       authListener?.subscription.unsubscribe();
+      linkSubscription.remove();
     };
   }, []);
 
@@ -230,14 +252,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // In demo mode, we pretend we sent an OTP
         return { message: "Demo mode: OTP sent (enter any 6 digits)" };
       }
+      const redirectTo = makeRedirectUri();
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
+          emailRedirectTo: redirectTo,
           shouldCreateUser: true,
         },
       });
       if (error) return { error: error.message };
-      return { message: "Check your email for the login code." };
+      return { message: "Check your email for the login code or link." };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Failed to send code";
       return { error: msg };
