@@ -2,6 +2,9 @@ const { getDefaultConfig } = require("expo/metro-config");
 
 const config = getDefaultConfig(__dirname);
 
+// Ensure Metro bundler includes SQLite database assets
+config.resolver.assetExts.push('db', 'sqlite');
+
 const defaultResolveRequest = config.resolver.resolveRequest;
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {

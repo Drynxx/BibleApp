@@ -6,7 +6,7 @@ import {
   MoreVertical,
   RotateCcw,
 } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -19,43 +19,58 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Palette, Typography } from '@/constants/theme';
 import { useCovenant } from '../../src/services/covenantContext';
 import { useTranslation } from 'react-i18next';
-
-const verses = {
-  en: {
-    reference: 'Romans 8:28',
-    before: 'And we know that in all things God works for the',
-    middle: 'of those who',
-    after: 'him',
-    answers: ['good', 'love'],
-    options: ['good', 'love', 'glory', 'fear', 'serve']
-  },
-  ro: {
-    reference: 'Romani 8:28',
-    before: 'De altă parte, știm că toate lucrurile lucrează spre',
-    middle: 'celor ce',
-    after: 'pe Dumnezeu',
-    answers: ['binele', 'iubesc'],
-    options: ['binele', 'iubesc', 'slava', 'frica', 'slujesc']
-  }
-};
+import { verseRepository } from '../../src/services/db/verseRepository';
+import { recallEngine, PracticeToken } from '../../src/services/practice/recallEngine';
 
 export default function PracticeScreen() {
   const { t, i18n } = useTranslation();
-  const lang = (i18n.language === 'ro') ? 'ro' : 'en';
-  const { reference, before, middle, after, answers, options } = verses[lang];
-
+  
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  const [tokens, setTokens] = useState<PracticeToken[]>([]);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const [options, setOptions] = useState<string[]>([]);
 
   const [picked, setPicked] = useState<string[]>([]);
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [submitting, setSubmitting] = useState(false);
   const { completeDailyReview } = useCovenant();
 
-  const filled = picked.length === answers.length;
+  useEffect(() => {
+    let isMounted = true;
+    async function loadVerse() {
+      // Hardcode Romans 8:28 for testing
+      const translation = i18n.language === 'ro' ? 'vdcc' : 'kjv';
+      const rawText = await verseRepository.getVerse(45, 8, 28, translation);
+      
+      if (!isMounted) return;
+
+      if (rawText && !rawText.startsWith('[')) {
+        const langCode = i18n.language === 'ro' ? 'ro' : 'en';
+        const generated = recallEngine.generateRecallPractice(rawText, 2, langCode); // Difficulty 2 = 2 blanks
+        setTokens(generated);
+        
+        const blankTokens = generated.filter(t => t.type === 'blank');
+        setAnswers(blankTokens.map(t => t.value));
+        
+        let allOptions = new Set<string>();
+        blankTokens.forEach(t => t.options?.forEach(opt => allOptions.add(opt)));
+        setOptions(Array.from(allOptions).sort(() => Math.random() - 0.5));
+      } else {
+        setTokens([{ type: 'text', value: rawText || 'Database not available.' }]);
+        setAnswers([]);
+        setOptions([]);
+      }
+    }
+    loadVerse();
+    return () => { isMounted = false; };
+  }, [i18n.language]);
+
+  const filled = answers.length > 0 && picked.length === answers.length;
   const isCorrect = useMemo(
-    () => picked.length === answers.length && picked.every((w, i) => w === answers[i]),
-    [picked],
+    () => answers.length > 0 && picked.length === answers.length && picked.every((w, i) => w === answers[i]),
+    [picked, answers],
   );
 
   const pick = (word: string) => {
@@ -140,7 +155,7 @@ export default function PracticeScreen() {
 
       {/* Reference Badge */}
       <View style={styles.refBadge}>
-        <Text style={styles.refBadgeText}>{reference}</Text>
+        <Text style={styles.refBadgeText}>{i18n.language === 'ro' ? 'Romani 8:28' : 'Romans 8:28'}</Text>
       </View>
 
       {/* Verse with Blanks Container */}
@@ -155,29 +170,29 @@ export default function PracticeScreen() {
         />
 
         <Text style={styles.verseText}>
-          {before}{' '}
-          <Text
-            style={[
-              styles.blankWord,
-              picked[0] && (result === 'wrong' ? styles.blankWrong : styles.blankActive),
-            ]}
-          >
-            {picked[0] ? picked[0] : '______'}
-          </Text>{' '}
-          {middle}{' '}
-          <Text
-            style={[
-              styles.blankWord,
-              picked[1] && (result === 'wrong' ? styles.blankWrong : styles.blankActive),
-            ]}
-          >
-            {picked[1] ? picked[1] : '______'}
-          </Text>{' '}
-          {after}
+          {tokens.map((token, index) => {
+            if (token.type === 'text') {
+              return <Text key={index}>{token.value}</Text>;
+            } else {
+              const blankIndex = tokens.slice(0, index).filter(t => t.type === 'blank').length;
+              const pickedWord = picked[blankIndex];
+              return (
+                <Text
+                  key={index}
+                  style={[
+                    styles.blankWord,
+                    pickedWord && (result === 'wrong' ? styles.blankWrong : styles.blankActive),
+                  ]}
+                >
+                  {pickedWord ? pickedWord : '______'}
+                </Text>
+              );
+            }
+          })}
         </Text>
       </View>
 
-      <Text style={styles.instructionText}>{('practice.tapWord', 'Tap a word to fill in the blanks')}</Text>
+      <Text style={styles.instructionText}>{t('practice.tapWord', 'Tap a word to fill in the blanks')}</Text>
 
       {/* Word options */}
       <View style={styles.optionsWrap}>

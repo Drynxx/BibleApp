@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/services/authContext';
+import { databaseManager } from '../../src/services/db/databaseManager';
 import { Palette, Typography } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 
@@ -10,6 +11,7 @@ export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { signOut, updateLanguage } = useAuth();
+  const [isDownloadingVDCC, setIsDownloadingVDCC] = useState(false);
 
   const handleLanguageChange = (lang: string) => {
     if (i18n.language === lang) return;
@@ -23,8 +25,20 @@ export default function ProfileScreen() {
     await signOut();
   };
 
+  const downloadVDCC = async () => {
+    try {
+      setIsDownloadingVDCC(true);
+      await databaseManager.ensureDbExists('vdcc');
+      Alert.alert('Success', 'Romanian translation downloaded successfully!');
+    } catch (e) {
+      Alert.alert('Download Failed', 'Could not download the database. Please try again.');
+    } finally {
+      setIsDownloadingVDCC(false);
+    }
+  };
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + 100 }]}>
       <Text style={styles.title}>{t('profile.title')}</Text>
 
       <View style={styles.section}>
@@ -44,6 +58,21 @@ export default function ProfileScreen() {
             <Text style={[styles.optionText, i18n.language === 'ro' && styles.optionTextActive]}>Română (RO)</Text>
           </Pressable>
         </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Bible Translations</Text>
+        <Pressable 
+          style={[styles.downloadBtn, isDownloadingVDCC && styles.downloadBtnDisabled]} 
+          onPress={downloadVDCC}
+          disabled={isDownloadingVDCC}
+        >
+          {isDownloadingVDCC ? (
+            <ActivityIndicator color={Palette.foreground} size="small" />
+          ) : (
+            <Text style={styles.downloadBtnText}>Download Romanian (VDCC)</Text>
+          )}
+        </Pressable>
       </View>
 
       <View style={styles.footer}>
@@ -116,5 +145,23 @@ const styles = StyleSheet.create({
     fontFamily: Typography.sansMedium,
     fontSize: 16,
     color: '#EF4444',
+  },
+  downloadBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Palette.card,
+    backgroundColor: Palette.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  downloadBtnDisabled: {
+    opacity: 0.7,
+  },
+  downloadBtnText: {
+    fontFamily: Typography.sansMedium,
+    fontSize: 16,
+    color: Palette.foreground,
   }
 });

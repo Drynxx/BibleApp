@@ -1,44 +1,42 @@
-import starterVerses from "../../../assets/data/verses.json";
+import { Platform } from 'react-native';
+import { databaseManager } from './databaseManager';
 
-export interface Verse {
-  id: string;
-  book: string;
-  chapter: number;
-  verse_number: number;
-  translation: "VDC" | "WEB" | "KJV";
+export interface VerseResult {
   text: string;
-  theme: string;
-  difficulty: "easy" | "medium" | "hard";
 }
 
-export class VerseRepository {
-  private verses: Verse[];
+export const verseRepository = {
+  /**
+   * Retrieves a specific verse from the local SQLite database.
+   * Gracefully falls back to placeholder text if the database doesn't exist yet.
+   */
+  async getVerse(
+    bookId: number,
+    chapter: number,
+    verse: number,
+    translation: 'kjv' | 'vdcc'
+  ): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return `[Database ${translation.toUpperCase()} not currently supported on Web]`;
+    }
 
-  constructor(initialData?: Verse[]) {
-    this.verses = initialData || (starterVerses as Verse[]);
+    try {
+      await databaseManager.ensureDbExists(translation);
+      const db = await databaseManager.getConnection(translation);
+      if (!db) {
+        return `[Database ${translation.toUpperCase()} not found locally]`;
+      }
+
+      // Execute the query. We use getFirstAsync to get a single row.
+      const result = await db.getFirstAsync<VerseResult>(
+        'SELECT text FROM verses WHERE book = ? AND chapter = ? AND verse = ?',
+        [bookId, chapter, verse]
+      );
+
+      return result?.text || null;
+    } catch (error) {
+      console.warn(`Error querying verse (${bookId}:${chapter}:${verse}) in ${translation}:`, error);
+      return '[Error querying database]';
+    }
   }
-
-  public getAll(translation?: "VDC" | "WEB"): Verse[] {
-    if (!translation) return this.verses;
-    return this.verses.filter((v) => v.translation === translation);
-  }
-
-  public getById(id: string): Verse | undefined {
-    return this.verses.find((v) => v.id === id);
-  }
-
-  public getByTheme(theme: string, translation?: "VDC" | "WEB"): Verse[] {
-    return this.verses.filter((v) => {
-      const matchTheme = v.theme.toLowerCase() === theme.toLowerCase();
-      return translation ? matchTheme && v.translation === translation : matchTheme;
-    });
-  }
-
-  public getRandom(translation: "VDC" | "WEB" = "VDC"): Verse {
-    const list = this.getAll(translation);
-    const index = Math.floor(Math.random() * list.length);
-    return list[index];
-  }
-}
-
-export const verseRepository = new VerseRepository();
+};

@@ -4,11 +4,9 @@ import { Platform, View, Text, Pressable } from 'react-native';
 import Animated, { LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-
 import { Palette, Typography } from '@/constants/theme';
 
-function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps & { insets: any }) {
+function CustomTabBar({ state, descriptors, navigation, insets }: any) {
   return (
     <View style={{
       position: 'absolute',
@@ -27,7 +25,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
       shadowOpacity: 0.12,
       shadowRadius: 16,
     }}>
-      {state.routes.map((route, index) => {
+      {state.routes.map((route: any, index: number) => {
         const { options } = descriptors[route.key];
         const isFocused = state.index === index;
 
