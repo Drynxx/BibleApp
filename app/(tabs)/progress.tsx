@@ -41,28 +41,28 @@ export default function ProgressScreen() {
 
   const achievements = [
     {
-      label: t('progress.achievement_7day', '7-Day Streak'),
+      label: t('progress.achievement_7day'),
       Icon: Flame,
       bg: Palette.primaryLight,
       medallion: 'rgba(158, 67, 36, 0.18)',
       iconColor: Palette.primary,
     },
     {
-      label: t('progress.achievement_firstBook', 'First Book Complete'),
+      label: t('progress.achievement_firstBook'),
       Icon: BookOpen,
       bg: Palette.goldLight,
       medallion: 'rgba(198, 139, 53, 0.22)',
       iconColor: Palette.gold,
     },
     {
-      label: t('progress.achievement_nightOwl', 'Night Owl'),
+      label: t('progress.achievement_nightOwl'),
       Icon: Moon,
       bg: Palette.sageLight,
       medallion: 'rgba(90, 119, 94, 0.25)',
       iconColor: Palette.sage,
     },
     {
-      label: t('progress.achievement_psalmsMaster', 'Psalms Master'),
+      label: t('progress.achievement_psalmsMaster'),
       Icon: Crown,
       bg: Palette.goldLight,
       medallion: 'rgba(198, 139, 53, 0.22)',
@@ -71,24 +71,24 @@ export default function ProgressScreen() {
   ];
 
   const mastered = [
-    t('progress.mastered_philippians', 'Philippians 4:13'),
-    t('progress.mastered_psalm', 'Psalm 23:1'),
-    t('progress.mastered_jeremiah', 'Jeremiah 29:11')
+    t('progress.mastered_philippians'),
+    t('progress.mastered_psalm'),
+    t('progress.mastered_jeremiah')
   ];
   const [monthIndex, setMonthIndex] = useState(1);
   const months = [
-    t('progress.october', 'October 2024'),
-    t('progress.november', 'November 2024'),
-    t('progress.december', 'December 2024')
+    t('progress.october'),
+    t('progress.november'),
+    t('progress.december')
   ];
   const weekdays = [
-    t('progress.sun', 'Sun'),
-    t('progress.mon', 'Mon'),
-    t('progress.tue', 'Tue'),
-    t('progress.wed', 'Wed'),
-    t('progress.thu', 'Thu'),
-    t('progress.fri', 'Fri'),
-    t('progress.sat', 'Sat')
+    t('progress.sun'),
+    t('progress.mon'),
+    t('progress.tue'),
+    t('progress.wed'),
+    t('progress.thu'),
+    t('progress.fri'),
+    t('progress.sat')
   ];
   const currentMonth = months[monthIndex] ?? months[1];
 
@@ -112,8 +112,8 @@ export default function ProgressScreen() {
             <Leaf color={Palette.gold} size={28} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
           </View>
           <View>
-            <Text style={styles.brandTitle}>{t('login.title', 'Inscribe')}</Text>
-            <Text style={styles.brandSubtitle}>{t('progress.subtitle', 'SMALL STEPS. DEEPER FAITH.')}</Text>
+            <Text style={styles.brandTitle}>{t('login.title')}</Text>
+            <Text style={styles.brandSubtitle}>{t('progress.subtitle')}</Text>
           </View>
         </Pressable>
 
@@ -128,8 +128,8 @@ export default function ProgressScreen() {
       {/* Hero Stats */}
       <View style={styles.heroSection}>
         <Text style={styles.heroNumber}>47</Text>
-        <Text style={styles.heroLabel}>{t('progress.versesMemorized', 'verses memorized')}</Text>
-        <Text style={styles.heroCaption}>{t('progress.caption', 'A BRIGHTER YOU, DAY BY DAY.')}</Text>
+        <Text style={styles.heroLabel}>{t('progress.versesMemorized')}</Text>
+        <Text style={styles.heroCaption}>{t('progress.caption')}</Text>
 
         <View style={styles.watermarkWrapper}>
           <Leaf color={Palette.gold} size={90} strokeWidth={1.2} style={{ opacity: 0.22, transform: [{ rotate: '25deg' }] }} />
@@ -141,8 +141,8 @@ export default function ProgressScreen() {
         <View style={[styles.card, { marginTop: 24 }]}>
           <View style={styles.cardHeader}>
             <View>
-              <Text style={styles.cardTitle}>{t('progress.partnerTitle', 'Accountability Partner')}</Text>
-              <Text style={styles.cardSubtitle}>{t('progress.partnerSubtitle', 'COVENANT STATUS')}</Text>
+              <Text style={styles.cardTitle}>{t('progress.partnerTitle')}</Text>
+              <Text style={styles.cardSubtitle}>{t('progress.partnerSubtitle')}</Text>
             </View>
             <View style={[styles.monthPill, partnerDone ? { backgroundColor: Palette.primary } : {}]}>
               <Text style={[styles.monthPillText, partnerDone ? { color: '#FFF' } : {}]}>
@@ -167,7 +167,7 @@ export default function ProgressScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View>
-            <Text style={styles.cardTitle}>{t('progress.practiceTitle', 'Practice Days')}</Text>
+            <Text style={styles.cardTitle}>{t('progress.practiceTitle')}</Text>
             <Text style={styles.cardSubtitle}>{currentMonth.toUpperCase()}</Text>
           </View>
 
@@ -230,16 +230,16 @@ export default function ProgressScreen() {
           {/* Vertical divider and side stats */}
           <View style={styles.sideStats}>
             <Text style={styles.sideStatNumber}>18</Text>
-            <Text style={styles.sideStatLabel}>{t('progress.daysMonth', 'DAYS THIS MONTH')}</Text>
+            <Text style={styles.sideStatLabel}>{t('progress.daysMonth')}</Text>
 
             <View style={styles.goldLine} />
 
             <Text style={styles.sideStatNumber}>5</Text>
-            <Text style={styles.sideStatLabel}>{t('progress.dayStreak', 'DAY STREAK')}</Text>
+            <Text style={styles.sideStatLabel}>{t('progress.dayStreak')}</Text>
 
             <View style={styles.goldLine} />
 
-            <Text style={styles.sideStatQuote}>{t('progress.quote', 'Consistency builds a brighter tomorrow')}</Text>
+            <Text style={styles.sideStatQuote}>{t('progress.quote')}</Text>
           </View>
         </View>
       </View>
@@ -247,9 +247,9 @@ export default function ProgressScreen() {
       {/* Achievements Section */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>{t('progress.achievements', 'Achievements')}</Text>
+          <Text style={styles.sectionTitle}>{t('progress.achievements')}</Text>
           <Pressable style={styles.seeAllRow}>
-            <Text style={styles.seeAllText}>{t('progress.seeAll', 'See all')}</Text>
+            <Text style={styles.seeAllText}>{t('progress.seeAll')}</Text>
             <ChevronRight color={Palette.primary} size={16} />
           </Pressable>
         </View>
@@ -272,9 +272,9 @@ export default function ProgressScreen() {
       {/* Recently Mastered Section */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>{t('progress.mastered', 'Recently Mastered')}</Text>
+          <Text style={styles.sectionTitle}>{t('progress.mastered')}</Text>
           <Pressable style={styles.seeAllRow}>
-            <Text style={styles.seeAllText}>{t('progress.seeAll', 'See all')}</Text>
+            <Text style={styles.seeAllText}>{t('progress.seeAll')}</Text>
             <ChevronRight color={Palette.primary} size={16} />
           </Pressable>
         </View>

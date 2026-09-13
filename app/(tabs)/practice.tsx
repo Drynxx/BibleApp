@@ -192,7 +192,7 @@ export default function PracticeScreen() {
         </Text>
       </View>
 
-      <Text style={styles.instructionText}>{t('practice.tapWord', 'Tap a word to fill in the blanks')}</Text>
+      <Text style={styles.instructionText}>{t('practice.tapWord')}</Text>
 
       {/* Word options */}
       <View style={styles.optionsWrap}>
@@ -230,8 +230,8 @@ export default function PracticeScreen() {
           ]}
         >
           {result === 'correct'
-            ? t('practice.feedbackCorrect', "Well done — that's exactly right.")
-            : t('practice.feedbackWrong', 'Not quite. Try those blanks again.')}
+            ? t('practice.feedbackCorrect')
+            : t('practice.feedbackWrong')}
         </Text>
       )}
 
@@ -248,14 +248,14 @@ export default function PracticeScreen() {
           onPress={handleCheck}
         >
           {submitting ? (
-            <Text style={styles.checkButtonText}>{t('practice.saving', 'Saving...')}</Text>
+            <Text style={styles.checkButtonText}>{t('practice.saving')}</Text>
           ) : result === 'correct' ? (
             <View style={styles.buttonInner}>
               <Check color="#FFFFFF" size={20} strokeWidth={2.5} />
-              <Text style={styles.checkButtonText}>{t('practice.correct', 'Correct')}</Text>
+              <Text style={styles.checkButtonText}>{t('practice.correct')}</Text>
             </View>
           ) : (
-            <Text style={styles.checkButtonText}>{t('practice.checkAnswer', 'Check answer')}</Text>
+            <Text style={styles.checkButtonText}>{t('practice.checkAnswer')}</Text>
           )}
         </Pressable>
 

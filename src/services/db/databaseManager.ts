@@ -90,7 +90,9 @@ export const databaseManager = {
   async getConnection(translation: 'kjv' | 'vdcc') {
     const dbName = translation === 'kjv' ? 'kjv.sqlite' : 'cornilescu.sqlite';
     try {
-      return await SQLite.openDatabaseAsync(dbName, undefined, DB_DIR);
+      // The native SQLite module expects a raw file path, not a file:// URI
+      const dirPath = DB_DIR.startsWith('file://') ? DB_DIR.substring(7) : DB_DIR;
+      return await SQLite.openDatabaseAsync(dbName, { useNewConnection: true }, dirPath);
     } catch (error) {
       console.warn(`Failed to open database connection for ${dbName}:`, error);
       return null;

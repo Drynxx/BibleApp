@@ -29,9 +29,9 @@ export default function ProfileScreen() {
     try {
       setIsDownloadingVDCC(true);
       await databaseManager.ensureDbExists('vdcc');
-      Alert.alert('Success', 'Romanian translation downloaded successfully!');
+      Alert.alert('Success');
     } catch (e) {
-      Alert.alert('Download Failed', 'Could not download the database. Please try again.');
+      Alert.alert('Download Failed');
     } finally {
       setIsDownloadingVDCC(false);
     }
@@ -61,7 +61,7 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Bible Translations</Text>
+        <Text style={styles.sectionTitle}>{t('profile.translations')}</Text>
         <Pressable 
           style={[styles.downloadBtn, isDownloadingVDCC && styles.downloadBtnDisabled]} 
           onPress={downloadVDCC}
@@ -70,7 +70,7 @@ export default function ProfileScreen() {
           {isDownloadingVDCC ? (
             <ActivityIndicator color={Palette.foreground} size="small" />
           ) : (
-            <Text style={styles.downloadBtnText}>Download Romanian (VDCC)</Text>
+            <Text style={styles.downloadBtnText}>{t('profile.downloadVdcc')}</Text>
           )}
         </Pressable>
       </View>

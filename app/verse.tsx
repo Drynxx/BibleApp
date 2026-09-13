@@ -57,7 +57,7 @@ export default function VerseDetailScreen() {
           <ArrowLeft color={Palette.foreground} size={22} />
         </Pressable>
 
-        <Text style={styles.headerTitle}>{t('verse.detail', 'Verse Detail')}</Text>
+        <Text style={styles.headerTitle}>{t('verse.detail')}</Text>
 
         <Pressable
           style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
@@ -73,7 +73,7 @@ export default function VerseDetailScreen() {
           <Text style={styles.goldBadgeText}>JOHN 3:16</Text>
         </View>
         <View style={styles.tagDivider} />
-        <Text style={styles.translationText}>{t('verse.translation', 'NIV')}</Text>
+        <Text style={styles.translationText}>{t('verse.translation')}</Text>
       </View>
 
       {/* Verse Scripture Text */}
@@ -115,8 +115,8 @@ export default function VerseDetailScreen() {
         <View style={styles.cardDivider} />
 
         <View style={styles.progressInfo}>
-          <Text style={styles.progressLabel}>{PROGRESS}% {t('verse.memorized', 'memorized')}</Text>
-          <Text style={styles.progressSub}>{t('verse.keepGoing', 'KEEP GOING')}</Text>
+          <Text style={styles.progressLabel}>{PROGRESS}% {t('verse.memorized')}</Text>
+          <Text style={styles.progressSub}>{t('verse.keepGoing')}</Text>
         </View>
       </View>
 
@@ -125,7 +125,7 @@ export default function VerseDetailScreen() {
         <View style={styles.reflectionBlob} />
         <View style={styles.reflectionHeader}>
           <Leaf color={Palette.gold} size={20} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
-          <Text style={styles.reflectionTitle}>{t('verse.reflection', 'REFLECTION')}</Text>
+          <Text style={styles.reflectionTitle}>{t('verse.reflection')}</Text>
         </View>
         <Text style={styles.reflectionBody}>
           This verse is the heart of the gospel — God’s love expressed through sacrifice.
@@ -140,7 +140,7 @@ export default function VerseDetailScreen() {
         ]}
         onPress={() => router.push('/practice')}
       >
-        <Text style={styles.ctaText}>{t('verse.continue', 'Continue practicing')}</Text>
+        <Text style={styles.ctaText}>{t('verse.continue')}</Text>
         <ArrowRight color="#FFFFFF" size={20} strokeWidth={2} style={styles.ctaArrow} />
       </Pressable>
     </ScrollView>

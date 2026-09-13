@@ -8,9 +8,9 @@
     "continue": "Continue practicing"
   },
   "collections": {
-    "psalms": "Psalms of\nComfort",
-    "fruit": "Fruit of\nthe Spirit",
-    "proverbs": "Proverbs\nWisdom"
+    "psalms": "Psalms of\\nComfort",
+    "fruit": "Fruit of\\nthe Spirit",
+    "proverbs": "Proverbs\\nWisdom"
   },
   "progress": {
     "mon": "Mon",
@@ -44,17 +44,7 @@
     "mastered": "Recently Mastered"
   },
   "login": {
-    "title": "Inscribe",
-    "subtitle": "SMALL STEPS. DEEPER FAITH.",
-    "invalidEmail": "Please enter a valid email address.",
-    "switchLang": "Română",
-    "googleBtn": "Continue with Google",
-    "emailBtn": "Continue with Email",
-    "emailLabel": "What's your email?",
-    "sendCode": "Send code",
-    "back": "Back",
-    "otpLabel": "Enter the code sent to {{email}}",
-    "diffEmail": "Use a different email"
+    "title": "Inscribe"
   },
   "home": {
     "goodMorning": "Good morning",
@@ -63,9 +53,7 @@
     "completed": "Completed",
     "startToday": "Start today’s verse",
     "continueJourney": "Continue your journey",
-    "sevenVerses": "7 VERSES",
-    "dayStreak": "Day {{streak}} streak",
-    "streakDays": "{{streak}} days"
+    "sevenVerses": "7 VERSES"
   },
   "practice": {
     "tapWord": "Tap a word to fill in the blanks",
@@ -74,19 +62,6 @@
     "saving": "Saving...",
     "correct": "Correct",
     "checkAnswer": "Check answer"
-  },
-  "tabs": {
-    "home": "Home",
-    "practice": "Practice",
-    "progress": "Progress",
-    "profile": "Profile"
-  },
-  "profile": {
-    "title": "Profile",
-    "language": "Language",
-    "signOut": "Sign Out",
-    "translations": "Bible Translations",
-    "downloadVdcc": "Download Romanian (VDCC)"
   },
   "Success": "Romanian translation downloaded successfully!",
   "Download Failed": "Could not download the database. Please try again."

@@ -37,19 +37,19 @@ export default function HomeScreen() {
 
   const collections = [
     {
-      title: t('collections.psalms', 'Psalms of\nComfort'),
+      title: t('collections.psalms'),
       icon: Leaf,
       toneBg: Palette.sageLight,
       accentColor: Palette.sage,
     },
     {
-      title: t('collections.fruit', 'Fruit of\nthe Spirit'),
+      title: t('collections.fruit'),
       icon: 'fruit' as const,
       toneBg: Palette.primaryLight,
       accentColor: Palette.gold,
     },
     {
-      title: t('collections.proverbs', 'Proverbs\nWisdom'),
+      title: t('collections.proverbs'),
       icon: Sun,
       toneBg: Palette.goldLight,
       accentColor: Palette.gold,
@@ -57,13 +57,13 @@ export default function HomeScreen() {
   ];
 
   const week = [
-    { day: t('progress.mon', 'Mon'), done: true },
-    { day: t('progress.tue', 'Tue'), done: true },
-    { day: t('progress.wed', 'Wed'), done: true },
-    { day: t('progress.thu', 'Thu'), done: true },
-    { day: t('progress.fri', 'Fri'), done: true },
-    { day: t('progress.sat', 'Sat'), done: true },
-    { day: t('progress.sun', 'Sun'), done: false },
+    { day: t('progress.mon'), done: true },
+    { day: t('progress.tue'), done: true },
+    { day: t('progress.wed'), done: true },
+    { day: t('progress.thu'), done: true },
+    { day: t('progress.fri'), done: true },
+    { day: t('progress.sat'), done: true },
+    { day: t('progress.sun'), done: false },
   ];
 
   return (
@@ -82,8 +82,8 @@ export default function HomeScreen() {
             <Leaf color={Palette.gold} size={30} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
           </View>
           <View>
-            <Text style={styles.brandTitle}>{t('login.title', 'Inscribe')}</Text>
-            <Text style={styles.brandSubtitle}>{t('progress.subtitle', 'SMALL STEPS. DEEPER FAITH.')}</Text>
+            <Text style={styles.brandTitle}>{t('login.title')}</Text>
+            <Text style={styles.brandSubtitle}>{t('progress.subtitle')}</Text>
           </View>
         </View>
 
@@ -98,9 +98,9 @@ export default function HomeScreen() {
 
       {/* Greeting */}
       <View style={styles.greetingSection}>
-        <Text style={styles.greetingTitle}>{t('home.goodMorning', 'Good morning')}, {displayName}</Text>
+        <Text style={styles.greetingTitle}>{t('home.goodMorning')}, {displayName}</Text>
         <View style={styles.streakRow}>
-          <Text style={styles.streakText}>{t('home.dayStreak', { streak, defaultValue: `Day ${streak} streak` })}</Text>
+          <Text style={styles.streakText}>{t('home.dayStreak', { streak })}</Text>
           <Flame color={Palette.primary} fill={Palette.primary} size={22} />
         </View>
       </View>
@@ -112,8 +112,8 @@ export default function HomeScreen() {
             <Flame color={Palette.primary} fill={Palette.primary} size={30} />
           </View>
           <View style={styles.streakNumbers}>
-            <Text style={styles.streakCount}>{t('home.streakDays', { streak, defaultValue: `${streak} days` })}</Text>
-            <Text style={styles.streakCaption}>{t('verse.keepGoing', 'KEEP GOING')}</Text>
+            <Text style={styles.streakCount}>{t('home.streakDays', { streak })}</Text>
+            <Text style={styles.streakCaption}>{t('verse.keepGoing')}</Text>
           </View>
         </View>
 
@@ -149,10 +149,10 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.verseQuote}>
-          {t('home.verseQuote', '“For God so loved the world, that he gave his one and only Son...”')}
+          {t('home.verseQuote')}
         </Text>
 
-        <Text style={styles.verseFootnote}>{t('home.loveChanges', 'A LOVE THAT CHANGES EVERYTHING')}</Text>
+        <Text style={styles.verseFootnote}>{t('home.loveChanges')}</Text>
       </Pressable>
 
       {/* Start Practice CTA */}
@@ -170,11 +170,11 @@ export default function HomeScreen() {
         {isDoneToday || started ? (
           <View style={styles.ctaContent}>
             <Check color="#FFFFFF" size={20} strokeWidth={2} />
-            <Text style={styles.ctaText}>{t('home.completed', 'Completed')}</Text>
+            <Text style={styles.ctaText}>{t('home.completed')}</Text>
           </View>
         ) : (
           <View style={styles.ctaContent}>
-            <Text style={styles.ctaText}>{t('home.startToday', 'Start today’s verse')}</Text>
+            <Text style={styles.ctaText}>{t('home.startToday')}</Text>
             <ArrowRight color="#FFFFFF" size={20} strokeWidth={2} />
           </View>
         )}
@@ -183,9 +183,9 @@ export default function HomeScreen() {
       {/* Continue Journey Collections */}
       <View style={styles.collectionsSection}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('home.continueJourney', 'Continue your journey')}</Text>
+          <Text style={styles.sectionTitle}>{t('home.continueJourney')}</Text>
           <Pressable style={styles.seeAllButton}>
-            <Text style={styles.seeAllText}>{t('progress.seeAll', 'See all')}</Text>
+            <Text style={styles.seeAllText}>{t('progress.seeAll')}</Text>
             <ArrowRight color={Palette.primary} size={15} />
           </Pressable>
         </View>
@@ -216,7 +216,7 @@ export default function HomeScreen() {
                 </View>
 
                 <Text style={styles.collectionTitle}>{item.title}</Text>
-                <Text style={styles.collectionCount}>{t('home.sevenVerses', '7 VERSES')}</Text>
+                <Text style={styles.collectionCount}>{t('home.sevenVerses')}</Text>
               </Pressable>
             );
           })}
