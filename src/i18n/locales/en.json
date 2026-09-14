@@ -183,5 +183,28 @@
     "downloadVdcc": "Download Romanian (VDCC)"
   },
   "Success": "Romanian translation downloaded successfully!",
-  "Download Failed": "Could not download the database. Please try again."
+  "Download Failed": "Could not download the database. Please try again.",
+  "inscribe": {
+    "levelOneEyebrow": "Level one · Stillness",
+    "readReflect": "Read & reflect",
+    "verseRef": "John 3:16 · NIV",
+    "verseText": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
+    "hiddenIndexes": [3, 8, 13, 16, 21, 24],
+    "options": ["loved", "gave", "Son,", "believes", "perish", "eternal", "created", "fears"],
+    "stayWithPhrase": "Stay with each phrase. Notice the love at the heart of every word.",
+    "imReady": "I’m ready",
+    "levelTwoEyebrow": "Level two · The Weave",
+    "completeVerse": "Complete the verse",
+    "chooseMissing": "Choose each missing word in order.",
+    "tryAnother": "Try another word.",
+    "wovenTogether": "Beautifully woven together.",
+    "continue": "Continue",
+    "levelThreeEyebrow": "Level three · The Inscription",
+    "recallWithin": "Recall from within",
+    "typeFirstLetter": "Type the first letter of every word.",
+    "isInscribed": "{{verse}} is inscribed.",
+    "finish": "Finish",
+    "practiceAgain": "Practice again",
+    "tapHere": "Tap here, then type letters"
+  }
 }

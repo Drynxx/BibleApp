@@ -182,6 +182,29 @@
     "translations": "Traduceri ale Bibliei",
     "downloadVdcc": "Descarcă în Română (VDCC)"
   },
-  "Success": "Traducerea în română a fost descărcată cu succes!",
-  "Download Failed": "Nu s-a putut descărca baza de date. Te rugăm să încerci din nou."
+  "Success": "Traducerea în limba română a fost descărcată cu succes!",
+  "Download Failed": "Nu s-a putut descărca baza de date. Te rugăm să încerci din nou.",
+  "inscribe": {
+    "levelOneEyebrow": "Nivelul unu · Liniște",
+    "readReflect": "Citește și reflectează",
+    "verseRef": "Ioan 3:16 · VDCC",
+    "verseText": "Fiindcă atât de mult a iubit Dumnezeu lumea, că a dat pe singurul Lui Fiu, pentru ca oricine crede în El să nu piară, ci să aibă viața veșnică.",
+    "hiddenIndexes": [5, 10, 14, 18, 23, 28],
+    "options": ["iubit", "dat", "Fiu,", "crede", "piară,", "veșnică.", "judecat", "frici"],
+    "stayWithPhrase": "Rămâi cu fiecare frază. Observă dragostea din inima fiecărui cuvânt.",
+    "imReady": "Sunt pregătit",
+    "levelTwoEyebrow": "Nivelul doi · Țesătura",
+    "completeVerse": "Completează versetul",
+    "chooseMissing": "Alege fiecare cuvânt lipsă în ordine.",
+    "tryAnother": "Încearcă alt cuvânt.",
+    "wovenTogether": "Frumos țesut împreună.",
+    "continue": "Continuă",
+    "levelThreeEyebrow": "Nivelul trei · Inscripția",
+    "recallWithin": "Amintește-ți din lăuntru",
+    "typeFirstLetter": "Tastează prima literă a fiecărui cuvânt.",
+    "isInscribed": "{{verse}} este inscripționat.",
+    "finish": "Termină",
+    "practiceAgain": "Exersează din nou",
+    "tapHere": "Apasă aici, apoi tastează literele"
+  }
 }
