@@ -12,11 +12,11 @@ const anxietyImage = require('../../assets/images/plans/plan-anxiety.jpg');
 const directionImage = require('../../assets/images/plans/plan-direction.jpg');
 const griefImage = require('../../assets/images/plans/plan-grief.jpg');
 
-const packs = [
-  { title: 'Anxiety & Worry', category: 'Peace', count: 7, description: 'Find peace in God’s presence through every season.', verses: 'Philippians 4:6–7 · Matthew 6:34 · Psalm 56:3', image: anxietyImage },
-  { title: 'Grief & Loss', category: 'Comfort', count: 9, description: 'Hope and comfort for the hard days.', verses: 'Psalm 34:18 · Revelation 21:4 · John 11:25', image: griefImage },
-  { title: 'A Need for Direction', category: 'Guidance', count: 6, description: 'Seeking God’s wisdom for what’s next.', verses: 'Proverbs 3:5–6 · Psalm 32:8 · Isaiah 30:21', image: directionImage },
-  { title: 'Anger & Frustration', category: 'Growth', count: 8, description: 'Words for patience, wisdom, and lasting peace.', verses: 'James 1:19–20 · Proverbs 15:1 · Ephesians 4:26', image: angerImage },
+const getPacks = (t: any) => [
+  { title: t('discover.plansList.anxiety.title'), category: t('discover.topics.Peace'), count: 7, description: t('discover.plansList.anxiety.description'), verses: 'Philippians 4:6–7 · Matthew 6:34 · Psalm 56:3', image: anxietyImage },
+  { title: t('discover.plansList.grief.title'), category: t('discover.topics.Comfort'), count: 9, description: t('discover.plansList.grief.description'), verses: 'Psalm 34:18 · Revelation 21:4 · John 11:25', image: griefImage },
+  { title: t('discover.plansList.direction.title'), category: t('discover.topics.Guidance'), count: 6, description: t('discover.plansList.direction.description'), verses: 'Proverbs 3:5–6 · Psalm 32:8 · Isaiah 30:21', image: directionImage },
+  { title: t('discover.plansList.anger.title'), category: t('discover.topics.Growth'), count: 8, description: t('discover.plansList.anger.description'), verses: 'James 1:19–20 · Proverbs 15:1 · Ephesians 4:26', image: angerImage },
 ];
 
 const topics = ['All', 'Peace', 'Comfort', 'Guidance', 'Growth'];
@@ -26,13 +26,13 @@ const recentBooks = ['Psalms', 'John', 'Romans'];
 const oldTestament = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy', 'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel', '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs', 'Ecclesiastes', 'Song of Solomon', 'Isaiah', 'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi'];
 const newTestament = ['Matthew', 'Mark', 'Luke', 'John', 'Acts', 'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus', 'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John', 'Jude', 'Revelation'];
 
-const verseLibrary = [
-  { reference: 'John 3:16', translation: 'NIV', text: 'For God so loved the world that he gave his one and only Son.', topic: 'Love', group: 'For today', tags: 'love salvation John' },
-  { reference: 'Philippians 4:6–7', translation: 'NIV', text: 'Do not be anxious about anything, but in every situation, by prayer and petition, present your requests to God.', topic: 'Peace', group: 'For today', tags: 'anxiety peace prayer Philippians' },
-  { reference: 'Psalm 34:18', translation: 'NIV', text: 'The Lord is close to the brokenhearted and saves those who are crushed in spirit.', topic: 'Comfort', group: 'Popular', tags: 'grief comfort Psalms' },
-  { reference: 'Proverbs 3:5–6', translation: 'NIV', text: 'Trust in the Lord with all your heart and lean not on your own understanding.', topic: 'Guidance', group: 'Popular', tags: 'direction wisdom trust Proverbs' },
-  { reference: 'James 1:19–20', translation: 'NIV', text: 'Everyone should be quick to listen, slow to speak and slow to become angry.', topic: 'Growth', group: 'Popular', tags: 'anger patience James' },
-  { reference: 'Romans 8:28', translation: 'NIV', text: 'In all things God works for the good of those who love him.', topic: 'Hope', group: 'For today', tags: 'hope purpose Romans' },
+const getVerseLibrary = (t: any) => [
+  { reference: t('discover.bibleBooks.John') + ' 3:16', translation: t('verse.translation'), text: t('discover.verseLibrary.john316.text'), topic: t('discover.verseLibrary.john316.topic'), group: 'For today', tags: 'love salvation John' },
+  { reference: t('discover.bibleBooks.Philippians') + ' 4:6–7', translation: t('verse.translation'), text: t('discover.verseLibrary.phil46.text'), topic: t('discover.verseLibrary.phil46.topic'), group: 'For today', tags: 'anxiety peace prayer Philippians' },
+  { reference: t('discover.bibleBooks.Psalms') + ' 34:18', translation: t('verse.translation'), text: t('discover.verseLibrary.psalm34.text'), topic: t('discover.verseLibrary.psalm34.topic'), group: 'Popular', tags: 'grief comfort Psalms' },
+  { reference: t('discover.bibleBooks.Proverbs') + ' 3:5–6', translation: t('verse.translation'), text: t('discover.verseLibrary.prov35.text'), topic: t('discover.verseLibrary.prov35.topic'), group: 'Popular', tags: 'direction wisdom trust Proverbs' },
+  { reference: t('discover.bibleBooks.James') + ' 1:19–20', translation: t('verse.translation'), text: t('discover.verseLibrary.james119.text'), topic: t('discover.verseLibrary.james119.topic'), group: 'Popular', tags: 'anger patience James' },
+  { reference: t('discover.bibleBooks.Romans') + ' 8:28', translation: t('verse.translation'), text: t('discover.verseLibrary.rom828.text'), topic: t('discover.verseLibrary.rom828.topic'), group: 'For today', tags: 'hope purpose Romans' },
 ];
 
 export default function DiscoverScreen() {
@@ -48,6 +48,9 @@ export default function DiscoverScreen() {
   const [queued, setQueued] = useState(false);
   const [queueExpanded, setQueueExpanded] = useState(false);
 
+  const packs = useMemo(() => getPacks(t), [t]);
+  const verseLibrary = useMemo(() => getVerseLibrary(t), [t]);
+
   const searchResults = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return { plans: [], books: [], verses: [] };
@@ -57,7 +60,7 @@ export default function DiscoverScreen() {
       books: [...oldTestament, ...newTestament].filter(includes),
       verses: verseLibrary.filter(v => includes(`${v.reference} ${v.text} ${v.topic} ${v.tags}`)),
     };
-  }, [query]);
+  }, [query, packs, verseLibrary]);
 
   const visiblePacks = activeTopic === 'All' ? packs : packs.filter(p => p.category === activeTopic);
   const featuredPack = visiblePacks[0] || packs[0];
@@ -145,7 +148,7 @@ export default function DiscoverScreen() {
                   {searchResults.books.length > 0 && (
                     <View style={styles.resultGroup}>
                       <Text style={styles.resultGroupTitle}>{t('discover.books', 'Bible books')}</Text>
-                      {searchResults.books.map(b => <BookRow key={b} book={b} onOpen={() => setPreview({ kind: 'book', title: b, description: 'Read a book', verses: b })} />)}
+                      {searchResults.books.map(b => <BookRow key={b} book={t(`discover.bibleBooks.${b}`, b)} onOpen={() => setPreview({ kind: 'book', title: t(`discover.bibleBooks.${b}`, b), description: t('discover.bibleBook', 'Bible book'), verses: t(`discover.bibleBooks.${b}`, b) })} />)}
                     </View>
                   )}
                   {searchResults.verses.length > 0 && (
@@ -223,8 +226,8 @@ export default function DiscoverScreen() {
                     <Text style={styles.eyebrow}>{t('discover.recentlyViewed', 'Recently viewed')}</Text>
                     <View style={styles.recentBooksGrid}>
                       {recentBooks.map(b => (
-                        <Pressable key={b} style={styles.recentBookBtn} onPress={() => setPreview({ kind: 'book', title: b, description: 'Book', verses: b })}>
-                          <Text style={styles.recentBookText}>{b}</Text>
+                        <Pressable key={b} style={styles.recentBookBtn} onPress={() => setPreview({ kind: 'book', title: t(`discover.bibleBooks.${b}`, b), description: t('discover.bibleBook', 'Bible book'), verses: t(`discover.bibleBooks.${b}`, b) })}>
+                          <Text style={styles.recentBookText}>{t(`discover.bibleBooks.${b}`, b)}</Text>
                         </Pressable>
                       ))}
                     </View>
@@ -236,7 +239,7 @@ export default function DiscoverScreen() {
                       <BookOpen color={Palette.gold} size={16} />
                     </View>
                     <View style={styles.booksGrid}>
-                      {oldTestament.map(b => <BookRow key={b} book={b} onOpen={() => setPreview({ kind: 'book', title: b, description: 'Book', verses: b })} />)}
+                      {oldTestament.map(b => <BookRow key={b} book={t(`discover.bibleBooks.${b}`, b)} onOpen={() => setPreview({ kind: 'book', title: t(`discover.bibleBooks.${b}`, b), description: t('discover.bibleBook', 'Bible book'), verses: t(`discover.bibleBooks.${b}`, b) })} />)}
                     </View>
                   </View>
 
@@ -246,7 +249,7 @@ export default function DiscoverScreen() {
                       <BookOpen color={Palette.gold} size={16} />
                     </View>
                     <View style={styles.booksGrid}>
-                      {newTestament.map(b => <BookRow key={b} book={b} onOpen={() => setPreview({ kind: 'book', title: b, description: 'Book', verses: b })} />)}
+                      {newTestament.map(b => <BookRow key={b} book={t(`discover.bibleBooks.${b}`, b)} onOpen={() => setPreview({ kind: 'book', title: t(`discover.bibleBooks.${b}`, b), description: t('discover.bibleBook', 'Bible book'), verses: t(`discover.bibleBooks.${b}`, b) })} />)}
                     </View>
                   </View>
                 </View>
