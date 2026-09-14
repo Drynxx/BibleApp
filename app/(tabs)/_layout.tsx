@@ -4,6 +4,7 @@ import { Platform, View, Text, Pressable } from 'react-native';
 import Animated, { LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Palette, Typography } from '@/constants/theme';
 
 function CustomTabBar({ state, descriptors, navigation, insets }: any) {
@@ -14,88 +15,98 @@ function CustomTabBar({ state, descriptors, navigation, insets }: any) {
       left: 20,
       right: 20,
       height: 76,
-      backgroundColor: '#FFFFFF',
       borderRadius: 38,
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 8,
       elevation: 12,
       shadowColor: '#000000',
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.12,
       shadowRadius: 16,
     }}>
-      {state.routes.map((route: any, index: number) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
+      <BlurView
+        intensity={100}
+        tint="light"
+        style={{
+          flex: 1,
+          borderRadius: 38,
+          overflow: 'hidden',
+          backgroundColor: Platform.OS === 'android' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.7)',
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 8,
+        }}
+      >
+        {state.routes.map((route: any, index: number) => {
+          const { options } = descriptors[route.key];
+          const isFocused = state.index === index;
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
 
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
 
-        let IconComponent = House;
-        if (route.name === 'practice') IconComponent = BookOpen;
-        else if (route.name === 'progress') IconComponent = BarChart3;
-        else if (route.name === 'profile') IconComponent = User;
+          let IconComponent = House;
+          if (route.name === 'practice') IconComponent = BookOpen;
+          else if (route.name === 'progress') IconComponent = BarChart3;
+          else if (route.name === 'profile') IconComponent = User;
 
-        return (
-          <Pressable
-            key={route.key}
-            onPress={onPress}
-            style={{
-              flex: 1,
-              height: '100%',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <View style={{
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 10,
-              paddingHorizontal: 16,
-              borderRadius: 24,
-            }}>
-              {isFocused && (
-                <Animated.View
-                  entering={FadeIn.duration(200)}
-                  exiting={FadeOut.duration(200)}
-                  style={{
-                    position: 'absolute',
-                    top: 0, bottom: 0, left: 0, right: 0,
-                    backgroundColor: Palette.primaryLight,
-                    borderRadius: 24,
-                  }}
+          return (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              style={{
+                flex: 1,
+                height: '100%',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <View style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: 10,
+                paddingHorizontal: 16,
+                borderRadius: 24,
+              }}>
+                {isFocused && (
+                  <Animated.View
+                    entering={FadeIn.duration(200)}
+                    exiting={FadeOut.duration(200)}
+                    style={{
+                      position: 'absolute',
+                      top: 0, bottom: 0, left: 0, right: 0,
+                      backgroundColor: Palette.primaryLight,
+                      borderRadius: 24,
+                    }}
+                  />
+                )}
+                <IconComponent
+                  color={isFocused ? Palette.primary : '#A1A1AA'}
+                  size={22}
+                  strokeWidth={isFocused ? 2.5 : 2}
                 />
-              )}
-              <IconComponent 
-                color={isFocused ? Palette.primary : '#A1A1AA'} 
-                size={22} 
-                strokeWidth={isFocused ? 2.5 : 2} 
-              />
-              <Text 
-                numberOfLines={1}
-                style={{ 
-                  color: isFocused ? Palette.primary : '#A1A1AA', 
-                  fontFamily: isFocused ? Typography.sansBold : Typography.sansMedium, 
-                  fontSize: 10,
-                  marginTop: 4
-                }}
-              >
-                {options.title}
-              </Text>
-            </View>
-          </Pressable>
-        );
-      })}
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: isFocused ? Palette.primary : '#A1A1AA',
+                    fontFamily: isFocused ? Typography.sansBold : Typography.sansMedium,
+                    fontSize: 10,
+                    marginTop: 4
+                  }}
+                >
+                  {options.title}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </BlurView>
     </View>
   );
 }
