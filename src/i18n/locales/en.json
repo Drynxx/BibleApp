@@ -13,6 +13,16 @@
     "proverbs": "Proverbs\nWisdom"
   },
   "progress": {
+    "eyebrow": "Track your journey",
+    "title": "Progress",
+    "menu": {
+      "share": "Share Milestone",
+      "shareDesc": "Generate a beautiful image of our Streak.",
+      "nudge": "Nudge Partner",
+      "nudgeDesc": "Send a gentle reminder to practice today.",
+      "manage": "Manage Partner",
+      "manageDesc": "Disconnect from this accountability partner."
+    },
     "mon": "Mon",
     "tue": "Tue",
     "wed": "Wed",
@@ -176,6 +186,7 @@
     }
   },
   "profile": {
+    "eyebrow": "Account & Settings",
     "title": "Profile",
     "language": "Language",
     "signOut": "Sign Out",
@@ -185,6 +196,16 @@
   "Success": "Romanian translation downloaded successfully!",
   "Download Failed": "Could not download the database. Please try again.",
   "inscribe": {
+    "menu": {
+      "share": "Share Verse",
+      "shareDesc": "Send this beautiful verse to a friend.",
+      "changeTranslation": "Change Translation",
+      "changeTranslationDesc": "Switch this specific verse to another version.",
+      "resetProgress": "Reset Progress",
+      "resetProgressDesc": "I totally forgot this one; drop it back to Step 1.",
+      "removeQueue": "Remove from Queue",
+      "removeQueueDesc": "I no longer want to memorize this verse."
+    },
     "levelOneEyebrow": "Level one · Stillness",
     "readReflect": "Read & reflect",
     "verseRef": "John 3:16 · NIV",

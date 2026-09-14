@@ -13,6 +13,16 @@
     "proverbs": "Înțelepciunea\nProverbelor"
   },
   "progress": {
+    "eyebrow": "Urmărește-ți călătoria",
+    "title": "Progres",
+    "menu": {
+      "share": "Distribuie Etapa",
+      "shareDesc": "Generează o imagine frumoasă cu seria noastră.",
+      "nudge": "Încurajează Partenerul",
+      "nudgeDesc": "Trimite un memento blând pentru exercițiul de azi.",
+      "manage": "Gestionează Partenerul",
+      "manageDesc": "Deconectează-te de la acest partener."
+    },
     "mon": "Luni",
     "tue": "Mar",
     "wed": "Mie",
@@ -176,6 +186,7 @@
     }
   },
   "profile": {
+    "eyebrow": "Cont și Setări",
     "title": "Profil",
     "language": "Limbă",
     "signOut": "Deconectare",
@@ -185,6 +196,16 @@
   "Success": "Traducerea în limba română a fost descărcată cu succes!",
   "Download Failed": "Nu s-a putut descărca baza de date. Te rugăm să încerci din nou.",
   "inscribe": {
+    "menu": {
+      "share": "Distribuie Versetul",
+      "shareDesc": "Trimite acest verset frumos unui prieten.",
+      "changeTranslation": "Schimbă Traducerea",
+      "changeTranslationDesc": "Schimbă acest verset specific cu altă versiune.",
+      "resetProgress": "Resetează Progresul",
+      "resetProgressDesc": "Am uitat complet acest verset; întoarce-te la Pasul 1.",
+      "removeQueue": "Elimină din Listă",
+      "removeQueueDesc": "Nu mai vreau să memorez acest verset."
+    },
     "levelOneEyebrow": "Nivelul unu · Liniște",
     "readReflect": "Citește și reflectează",
     "verseRef": "Ioan 3:16 · VDCC",
