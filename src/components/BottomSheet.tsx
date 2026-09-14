@@ -41,7 +41,7 @@ export function BottomSheet({ visible, onClose, children }: { visible: boolean, 
   if (!show) return null;
 
   return (
-    <Modal visible={show} transparent animationType="none" onRequestClose={onClose}>
+    <Modal visible={show} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent hardwareAccelerated>
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.4)', opacity: fadeAnim }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>

@@ -124,6 +124,11 @@ export default function ProgressScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20) }]}>
+      <BottomSheetMenu 
+        visible={menuVisible} 
+        onClose={() => setMenuVisible(false)} 
+        options={menuOptions} 
+      />
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -145,12 +150,6 @@ export default function ProgressScreen() {
           <MoreVertical color={Palette.foreground} size={20} />
         </Pressable>
       </View>
-
-      <BottomSheetMenu 
-        visible={menuVisible} 
-        onClose={() => setMenuVisible(false)} 
-        options={menuOptions} 
-      />
 
       {/* Hero Stats */}
       <View style={styles.heroSection}>

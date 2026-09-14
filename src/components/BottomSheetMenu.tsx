@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Palette, Typography } from '@/constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheet } from './BottomSheet';
 
 export interface MenuOption {
@@ -19,9 +20,11 @@ interface BottomSheetMenuProps {
 }
 
 export function BottomSheetMenu({ visible, onClose, title, options }: BottomSheetMenuProps) {
+  const insets = useSafeAreaInsets();
+  
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={styles.modalContent}>
+      <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 24) }]}>
         <View style={styles.modalHandle} />
         {title && <Text style={styles.modalTitle}>{title}</Text>}
         
@@ -70,7 +73,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingBottom: 40,
   },
   modalHandle: {
     width: 48,
