@@ -164,7 +164,7 @@ export default function HomeScreen() {
         ]}
         onPress={() => {
           setStarted(true);
-          router.push('/practice');
+          router.push('/inscribe');
         }}
       >
         {isDoneToday || started ? (

@@ -77,7 +77,7 @@ export default function DiscoverScreen() {
 
   const beginNow = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/practice');
+    router.push('/inscribe');
   };
 
   return (
