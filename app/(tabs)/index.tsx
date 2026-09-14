@@ -4,7 +4,6 @@ import {
   Check,
   Flame,
   Leaf,
-  LogOut,
   Sun,
 } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -77,23 +76,13 @@ export default function HomeScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerBrand}>
-          <View style={styles.logoBadge}>
-            <Leaf color={Palette.gold} size={30} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
-          </View>
-          <View>
-            <Text style={styles.brandTitle}>{t('login.title')}</Text>
-            <Text style={styles.brandSubtitle}>{t('progress.subtitle')}</Text>
-          </View>
+        <View style={[styles.logoBadge, { transform: [{ rotate: '-12deg' }] }]}>
+          <Leaf 
+            color={Palette.gold} 
+            size={30} 
+            strokeWidth={1.8} 
+          />
         </View>
-
-        <Pressable
-          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-          accessibilityLabel="Log out"
-          onPress={() => signOut()}
-        >
-          <LogOut color={Palette.foreground} size={20} />
-        </Pressable>
       </View>
 
       {/* Greeting */}

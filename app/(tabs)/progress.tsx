@@ -9,6 +9,8 @@ import {
   Leaf,
   Moon,
   MoreVertical,
+  Share,
+  UserMinus,
 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
@@ -23,6 +25,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Palette, Typography } from '@/constants/theme';
 import { useCovenant } from '../../src/services/covenantContext';
+import { BottomSheetMenu } from '../../src/components/BottomSheetMenu';
 
 const months = ['October 2024', 'November 2024', 'December 2024'];
 const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -38,6 +41,29 @@ export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
+  const [menuVisible, setMenuVisible] = useState(false);
+
+  const menuOptions = [
+    {
+      label: t('progress.menu.share', 'Share Milestone'),
+      description: t('progress.menu.shareDesc', 'Generate a beautiful image of our Streak.'),
+      icon: <Share size={18} color={Palette.foreground} />,
+      onPress: () => { /* TODO: trigger share */ }
+    },
+    {
+      label: t('progress.menu.nudge', 'Nudge Partner'),
+      description: t('progress.menu.nudgeDesc', 'Send a gentle reminder to practice today.'),
+      icon: <Flame size={18} color={Palette.foreground} />,
+      onPress: () => { /* TODO: trigger nudge */ }
+    },
+    {
+      label: t('progress.menu.manage', 'Manage Partner'),
+      description: t('progress.menu.manageDesc', 'Disconnect from this accountability partner.'),
+      icon: <UserMinus size={18} color="#EF4444" />,
+      destructive: true,
+      onPress: () => { /* TODO: trigger disconnect */ }
+    }
+  ];
 
   const achievements = [
     {
@@ -97,33 +123,34 @@ export default function ProgressScreen() {
   const partnerDone = !!partnerTodayReview && partnerTodayReview.status === 'completed';
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: Math.max(insets.top + 8, 20), paddingBottom: insets.bottom + 120 },
-      ]}
+    <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20) }]}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 120 },
+        ]}
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.headerBrand} onPress={() => router.push('/')}>
-          <View style={styles.logoBadge}>
-            <Leaf color={Palette.gold} size={28} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
-          </View>
-          <View>
-            <Text style={styles.brandTitle}>{t('login.title')}</Text>
-            <Text style={styles.brandSubtitle}>{t('progress.subtitle')}</Text>
-          </View>
-        </Pressable>
-
+        <View>
+          <Text style={styles.headerEyebrow}>{t('progress.eyebrow', 'Track your journey')}</Text>
+          <Text style={styles.headerTitle}>{t('progress.title', 'Progress')}</Text>
+        </View>
         <Pressable
           style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-          accessibilityLabel="Open menu"
+          onPress={() => setMenuVisible(true)}
+          accessibilityLabel="More options"
         >
           <MoreVertical color={Palette.foreground} size={20} />
         </Pressable>
       </View>
+
+      <BottomSheetMenu 
+        visible={menuVisible} 
+        onClose={() => setMenuVisible(false)} 
+        options={menuOptions} 
+      />
 
       {/* Hero Stats */}
       <View style={styles.heroSection}>
@@ -305,6 +332,7 @@ export default function ProgressScreen() {
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }
 
@@ -317,33 +345,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   header: {
+    paddingTop: 28,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  headerBrand: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
   },
-  logoBadge: {
+  iconButton: {
     width: 44,
     height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.03)',
   },
-  brandTitle: {
-    fontFamily: Typography.serifSemiBold,
-    fontSize: 28,
-    color: Palette.foreground,
-    lineHeight: 30,
-  },
-  brandSubtitle: {
+  headerEyebrow: {
     fontFamily: Typography.sansBold,
-    fontSize: 9,
-    letterSpacing: 1.8,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
     color: Palette.primary,
-    marginTop: 2,
+  },
+  headerTitle: {
+    fontFamily: Typography.serifSemiBold,
+    fontSize: 44,
+    lineHeight: 48,
+    color: Palette.foreground,
+    marginTop: 6,
+  },
+  headerSubtitle: {
+    fontFamily: Typography.sansMedium,
+    fontSize: 14,
+    color: Palette.mutedForeground,
+    marginTop: 10,
   },
   iconButton: {
     width: 42,

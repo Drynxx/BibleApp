@@ -2,9 +2,13 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import {
   ArrowRight,
+  Book,
   Check,
   Leaf,
+  MoreVertical,
   RotateCcw,
+  Share,
+  Trash2,
   X,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
@@ -21,6 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { Palette, Typography } from '@/constants/theme';
+import { BottomSheetMenu } from '../src/components/BottomSheetMenu';
 
 export default function InscribeScreen() {
   const { t } = useTranslation();
@@ -41,6 +46,39 @@ export default function InscribeScreen() {
   const inputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const complete = revealed === words.length;
+  const [menuVisible, setMenuVisible] = useState(false);
+
+  const menuOptions = [
+    {
+      label: t('inscribe.menu.share', 'Share Verse'),
+      description: t('inscribe.menu.shareDesc', 'Send this beautiful verse to a friend.'),
+      icon: <Share size={18} color={Palette.foreground} />,
+      onPress: () => { /* TODO: trigger share */ }
+    },
+    {
+      label: t('inscribe.menu.changeTranslation', 'Change Translation'),
+      description: t('inscribe.menu.changeTranslationDesc', 'Switch this specific verse to another version.'),
+      icon: <Book size={18} color={Palette.foreground} />,
+      onPress: () => { /* TODO: trigger change translation */ }
+    },
+    {
+      label: t('inscribe.menu.resetProgress', 'Reset Progress'),
+      description: t('inscribe.menu.resetProgressDesc', 'I totally forgot this one; drop it back to Step 1.'),
+      icon: <RotateCcw size={18} color={Palette.foreground} />,
+      onPress: () => { 
+        setLevel(1);
+        setPicked([]);
+        setRevealed(0);
+      }
+    },
+    {
+      label: t('inscribe.menu.removeQueue', 'Remove from Queue'),
+      description: t('inscribe.menu.removeQueueDesc', 'I no longer want to memorize this verse.'),
+      icon: <Trash2 size={18} color="#EF4444" />,
+      destructive: true,
+      onPress: () => { close(); }
+    }
+  ];
 
   useEffect(() => {
     if (level === 3) {
@@ -110,8 +148,20 @@ export default function InscribeScreen() {
           ))}
         </View>
 
-        <Text style={styles.progressText}>{level}/3</Text>
+        <Pressable
+          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+          onPress={() => setMenuVisible(true)}
+          accessibilityLabel="More options"
+        >
+          <MoreVertical color={Palette.foreground} size={20} />
+        </Pressable>
       </View>
+
+      <BottomSheetMenu 
+        visible={menuVisible} 
+        onClose={() => setMenuVisible(false)} 
+        options={menuOptions} 
+      />
 
       <ScrollView 
         ref={scrollRef}

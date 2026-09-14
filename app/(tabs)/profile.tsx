@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/services/authContext';
@@ -38,48 +38,56 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + 100 }]}>
-      <Text style={styles.title}>{t('profile.title')}</Text>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20) }]}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerEyebrow}>{t('profile.eyebrow', 'Account & Settings')}</Text>
+          <Text style={styles.headerTitle}>{t('profile.title', 'Profile')}</Text>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
-        <View style={styles.optionsRow}>
-          <Pressable 
-            style={[styles.optionBtn, i18n.language === 'en' && styles.optionBtnActive]} 
-            onPress={() => handleLanguageChange('en')}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
+          <View style={styles.optionsRow}>
+            <Pressable
+              style={[styles.optionBtn, i18n.language === 'en' && styles.optionBtnActive]}
+              onPress={() => handleLanguageChange('en')}
+            >
+              <Text style={[styles.optionText, i18n.language === 'en' && styles.optionTextActive]}>English (EN)</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.optionBtn, i18n.language === 'ro' && styles.optionBtnActive]}
+              onPress={() => handleLanguageChange('ro')}
+            >
+              <Text style={[styles.optionText, i18n.language === 'ro' && styles.optionTextActive]}>Română (RO)</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.translations')}</Text>
+          <Pressable
+            style={[styles.downloadBtn, isDownloadingVDCC && styles.downloadBtnDisabled]}
+            onPress={downloadVDCC}
+            disabled={isDownloadingVDCC}
           >
-            <Text style={[styles.optionText, i18n.language === 'en' && styles.optionTextActive]}>English (EN)</Text>
-          </Pressable>
-          
-          <Pressable 
-            style={[styles.optionBtn, i18n.language === 'ro' && styles.optionBtnActive]} 
-            onPress={() => handleLanguageChange('ro')}
-          >
-            <Text style={[styles.optionText, i18n.language === 'ro' && styles.optionTextActive]}>Română (RO)</Text>
+            {isDownloadingVDCC ? (
+              <ActivityIndicator color={Palette.foreground} size="small" />
+            ) : (
+              <Text style={styles.downloadBtnText}>{t('profile.downloadVdcc')}</Text>
+            )}
           </Pressable>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('profile.translations')}</Text>
-        <Pressable 
-          style={[styles.downloadBtn, isDownloadingVDCC && styles.downloadBtnDisabled]} 
-          onPress={downloadVDCC}
-          disabled={isDownloadingVDCC}
-        >
-          {isDownloadingVDCC ? (
-            <ActivityIndicator color={Palette.foreground} size="small" />
-          ) : (
-            <Text style={styles.downloadBtnText}>{t('profile.downloadVdcc')}</Text>
-          )}
-        </Pressable>
-      </View>
-
-      <View style={styles.footer}>
-        <Pressable style={styles.signOutBtn} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>{t('profile.signOut')}</Text>
-        </Pressable>
-      </View>
+        <View style={styles.footer}>
+          <Pressable style={styles.signOutBtn} onPress={handleSignOut}>
+            <Text style={styles.signOutText}>{t('profile.signOut')}</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -88,16 +96,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Palette.background,
-    padding: 24,
   },
-  title: {
-    fontFamily: Typography.serifMedium,
-    fontSize: 32,
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 28,
+  },
+  headerEyebrow: {
+    fontFamily: Typography.sansBold,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    color: Palette.primary,
+  },
+  headerTitle: {
+    fontFamily: Typography.serifSemiBold,
+    fontSize: 44,
+    lineHeight: 48,
     color: Palette.foreground,
-    marginBottom: 40,
+    marginTop: 6,
+  },
+  headerSubtitle: {
+    fontFamily: Typography.sansMedium,
+    fontSize: 14,
+    color: Palette.mutedForeground,
+    marginTop: 10,
   },
   section: {
+    marginTop: 40,
     marginBottom: 32,
+    paddingHorizontal: 24,
   },
   sectionTitle: {
     fontFamily: Typography.sansMedium,
@@ -133,9 +160,10 @@ const styles = StyleSheet.create({
     color: Palette.foreground,
   },
   footer: {
-    marginTop: 'auto',
+    marginTop: 40,
     marginBottom: 20,
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
   signOutBtn: {
     paddingVertical: 12,
