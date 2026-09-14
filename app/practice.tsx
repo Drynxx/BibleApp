@@ -17,10 +17,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Palette, Typography } from '@/constants/theme';
-import { useCovenant } from '../../src/services/covenantContext';
+import { useCovenant } from '../src/services/covenantContext';
 import { useTranslation } from 'react-i18next';
-import { verseRepository } from '../../src/services/db/verseRepository';
-import { recallEngine, PracticeToken } from '../../src/services/practice/recallEngine';
+import { verseRepository } from '../src/services/db/verseRepository';
+import { recallEngine, PracticeToken } from '../src/services/practice/recallEngine';
 
 export default function PracticeScreen() {
   const { t, i18n } = useTranslation();
@@ -121,13 +121,13 @@ export default function PracticeScreen() {
       style={styles.container}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: Math.max(insets.top + 8, 20), paddingBottom: insets.bottom + 120 },
+        { paddingTop: Math.max(insets.top + 8, 20), paddingBottom: insets.bottom + 40 },
       ]}
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.headerBrand} onPress={() => router.push('/')}>
+        <Pressable style={styles.headerBrand} onPress={() => router.back()}>
           <View style={styles.logoBadge}>
             <Leaf color={Palette.gold} size={28} strokeWidth={1.8} style={{ transform: [{ rotate: '-12deg' }] }} />
           </View>

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { BarChart3, BookOpen, House, User } from 'lucide-react-native';
+import { BarChart3, Compass, House, User } from 'lucide-react-native';
 import { Platform, View, Text, Pressable } from 'react-native';
 import Animated, { LinearTransition, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -52,7 +52,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }: any) {
           };
 
           let IconComponent = House;
-          if (route.name === 'practice') IconComponent = BookOpen;
+          if (route.name === 'discover') IconComponent = Compass;
           else if (route.name === 'progress') IconComponent = BarChart3;
           else if (route.name === 'profile') IconComponent = User;
 
@@ -127,8 +127,8 @@ export default function TabLayout() {
         options={{ title: t('tabs.home') }}
       />
       <Tabs.Screen
-        name="practice"
-        options={{ title: t('tabs.practice') }}
+        name="discover"
+        options={{ title: t('tabs.discover') }}
       />
       <Tabs.Screen
         name="progress"
