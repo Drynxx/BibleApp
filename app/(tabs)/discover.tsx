@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, Dimensions, Modal, Animated, PanResponder } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Search, X, ChevronRight, BookOpen, Plus, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react-native';
@@ -79,8 +79,8 @@ export default function DiscoverScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20) }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 240 }} showsVerticalScrollIndicator={false}>
-        
+      <ScrollView showsVerticalScrollIndicator={false}>
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerEyebrow}>{t('discover.buildPractice', 'Build your practice')}</Text>
@@ -124,39 +124,39 @@ export default function DiscoverScreen() {
         {/* Content */}
         <View style={styles.contentSection}>
           {isSearching ? (
-             <View style={styles.searchResults}>
-                <View style={styles.searchResultHeader}>
-                  <Text style={styles.searchResultTitle}>{t('discover.resultsFor', { query: query })}</Text>
-                  <Text style={styles.searchResultCount}>{t('discover.foundCount', { count: resultCount })}</Text>
+            <View style={styles.searchResults}>
+              <View style={styles.searchResultHeader}>
+                <Text style={styles.searchResultTitle}>{t('discover.resultsFor', { query: query })}</Text>
+                <Text style={styles.searchResultCount}>{t('discover.foundCount', { count: resultCount })}</Text>
+              </View>
+              {resultCount === 0 ? (
+                <View style={styles.noResults}>
+                  <Text style={styles.noResultsTitle}>{t('discover.noResults', 'No matching content')}</Text>
+                  <Text style={styles.noResultsSubtitle}>{t('discover.trySearch', 'Try a Bible book, topic, or verse reference.')}</Text>
                 </View>
-                {resultCount === 0 ? (
-                  <View style={styles.noResults}>
-                    <Text style={styles.noResultsTitle}>{t('discover.noResults', 'No matching content')}</Text>
-                    <Text style={styles.noResultsSubtitle}>{t('discover.trySearch', 'Try a Bible book, topic, or verse reference.')}</Text>
-                  </View>
-                ) : (
-                  <View style={styles.resultsWrapper}>
-                    {searchResults.plans.length > 0 && (
-                      <View style={styles.resultGroup}>
-                        <Text style={styles.resultGroupTitle}>{t('discover.plans', 'Plans')}</Text>
-                        {searchResults.plans.map(p => <PlanRow key={p.title} pack={p} onOpen={() => setPreview({ kind: 'plan', ...p })} />)}
-                      </View>
-                    )}
-                    {searchResults.books.length > 0 && (
-                      <View style={styles.resultGroup}>
-                        <Text style={styles.resultGroupTitle}>{t('discover.books', 'Bible books')}</Text>
-                        {searchResults.books.map(b => <BookRow key={b} book={b} onOpen={() => setPreview({ kind: 'book', title: b, description: 'Read a book', verses: b })} />)}
-                      </View>
-                    )}
-                    {searchResults.verses.length > 0 && (
-                      <View style={styles.resultGroup}>
-                        <Text style={styles.resultGroupTitle}>{t('discover.verses', 'Verses')}</Text>
-                        {searchResults.verses.map(v => <ReferenceRow key={v.reference} verse={v} onOpen={() => setPreview({ kind: 'verse', title: v.reference, description: v.text, verses: v.reference })} onQueue={() => handleQueue(v.reference)} />)}
-                      </View>
-                    )}
-                  </View>
-                )}
-             </View>
+              ) : (
+                <View style={styles.resultsWrapper}>
+                  {searchResults.plans.length > 0 && (
+                    <View style={styles.resultGroup}>
+                      <Text style={styles.resultGroupTitle}>{t('discover.plans', 'Plans')}</Text>
+                      {searchResults.plans.map(p => <PlanRow key={p.title} pack={p} onOpen={() => setPreview({ kind: 'plan', ...p })} />)}
+                    </View>
+                  )}
+                  {searchResults.books.length > 0 && (
+                    <View style={styles.resultGroup}>
+                      <Text style={styles.resultGroupTitle}>{t('discover.books', 'Bible books')}</Text>
+                      {searchResults.books.map(b => <BookRow key={b} book={b} onOpen={() => setPreview({ kind: 'book', title: b, description: 'Read a book', verses: b })} />)}
+                    </View>
+                  )}
+                  {searchResults.verses.length > 0 && (
+                    <View style={styles.resultGroup}>
+                      <Text style={styles.resultGroupTitle}>{t('discover.verses', 'Verses')}</Text>
+                      {searchResults.verses.map(v => <ReferenceRow key={v.reference} verse={v} onOpen={() => setPreview({ kind: 'verse', title: v.reference, description: v.text, verses: v.reference })} onQueue={() => handleQueue(v.reference)} />)}
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
           ) : (
             <View>
               {/* Plans Tab */}
@@ -164,7 +164,7 @@ export default function DiscoverScreen() {
                 <View>
                   <Text style={styles.eyebrow}>{t('discover.chooseByNeed', 'Choose by need')}</Text>
                   <Text style={styles.sectionTitle}>{t('discover.whatDoYouNeed', 'What do you need today?')}</Text>
-                  
+
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topicsScroll}>
                     {topics.map(topic => {
                       const isActive = activeTopic === topic;
@@ -218,7 +218,7 @@ export default function DiscoverScreen() {
                 <View>
                   <Text style={styles.eyebrow}>{t('discover.theBible', 'The Bible')}</Text>
                   <Text style={styles.sectionTitle}>{t('discover.browseByBook', 'Browse by Book')}</Text>
-                  
+
                   <View style={styles.recentBooks}>
                     <Text style={styles.eyebrow}>{t('discover.recentlyViewed', 'Recently viewed')}</Text>
                     <View style={styles.recentBooksGrid}>
@@ -257,7 +257,7 @@ export default function DiscoverScreen() {
                 <View>
                   <Text style={styles.eyebrow}>{t('discover.scriptureIndex', 'Scripture index')}</Text>
                   <Text style={styles.sectionTitle}>{t('discover.bibleReferences', 'Bible References')}</Text>
-                  
+
                   {['For today', 'Popular'].map(group => (
                     <View key={group} style={styles.verseGroup}>
                       <Text style={styles.eyebrow}>{t(`discover.${group === 'For today' ? 'forToday' : 'popular'}`, group)}</Text>
@@ -278,7 +278,7 @@ export default function DiscoverScreen() {
       {/* Floating Queue Widget */}
       <View style={styles.queueWidget}>
         {queueExpanded && (
-           <Text style={styles.queueReadyText}>{t('discover.readyNextSession', 'Ready to continue your next memorization session?')}</Text>
+          <Text style={styles.queueReadyText}>{t('discover.readyNextSession', 'Ready to continue your next memorization session?')}</Text>
         )}
         <View style={styles.queueRow}>
           <Pressable style={styles.queueExpandBtn} onPress={() => setQueueExpanded(!queueExpanded)}>
@@ -294,46 +294,42 @@ export default function DiscoverScreen() {
               <ArrowRight color="#FFF" size={16} />
             </Pressable>
           ) : (
-            <Pressable style={[styles.queueActionBtn, { backgroundColor: Palette.card, borderWidth: 1, borderColor: Palette.border }]} onPress={() => handleQueue(queuedItem)}>
-              <Text style={[styles.queueActionText, { color: Palette.foreground }]}>{t('discover.addToQueue', 'Add to Queue')}</Text>
+            <Pressable style={styles.queueActionBtn} onPress={() => handleQueue(queuedItem)}>
+              <Text style={styles.queueActionText}>{t('discover.addToQueue', 'Add to Queue')}</Text>
             </Pressable>
           )}
         </View>
       </View>
 
-      {/* Bottom Sheet Preview (Simulated as Modal for simplicity without installing external bottom sheet libs) */}
-      <Modal visible={!!preview} animationType="slide" transparent>
-        <Pressable style={styles.modalBackdrop} onPress={() => setPreview(null)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalEyebrow}>
-              {preview?.kind === 'verse' ? t('discover.memoryVerse', 'Memory verse') : preview?.kind === 'plan' ? t('discover.versePlan', { count: preview.count }) : t('discover.bibleBook', 'Bible book')}
-            </Text>
-            <Text style={styles.modalTitle}>{preview?.title}</Text>
-            <Text style={styles.modalDesc}>{preview?.description}</Text>
+      <BottomSheet visible={!!preview} onClose={() => setPreview(null)}>
+        <Pressable style={styles.modalContent} onPress={() => { }}>
+          <View style={styles.modalHandle} />
+          <Text style={styles.modalEyebrow}>
+            {preview?.kind === 'verse' ? t('discover.memoryVerse', 'Memory verse') : preview?.kind === 'plan' ? t('discover.versePlan', { count: preview.count }) : t('discover.bibleBook', 'Bible book')}
+          </Text>
+          <Text style={styles.modalTitle}>{preview?.title}</Text>
+          <Text style={styles.modalDesc}>{preview?.description}</Text>
 
-            <View style={styles.modalPreviewBox}>
-              <Text style={styles.modalPreviewEyebrow}>{t('discover.preview', 'Preview')}</Text>
-              <Text style={styles.modalPreviewVerses}>{preview?.verses}</Text>
-            </View>
+          <View style={styles.modalPreviewBox}>
+            <Text style={styles.modalPreviewEyebrow}>{t('discover.preview', 'Preview')}</Text>
+            <Text style={styles.modalPreviewVerses}>{preview?.verses}</Text>
+          </View>
 
-            {queued && queuedItem === preview?.title ? (
-              <View style={styles.modalAddedState}>
-                <Text style={styles.modalAddedText}>{t('discover.addedToQueue', 'Added to your practice queue.')}</Text>
-                <Pressable style={styles.modalBeginBtn} onPress={() => { setPreview(null); beginNow(); }}>
-                  <Text style={styles.modalBeginText}>{t('discover.beginNow', 'Begin now')}</Text>
-                  <ArrowRight color="#FFF" size={18} />
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable style={styles.modalQueueBtn} onPress={() => handleQueue(preview?.title)}>
-                <Text style={styles.modalQueueText}>{t('discover.addToQueue', 'Add to Queue')}</Text>
-                <ArrowRight color="#FFF" size={18} />
+          {queued && queuedItem === preview?.title ? (
+            <View style={styles.modalAddedState}>
+              <Text style={styles.modalAddedText}>{t('discover.addedToQueue', 'Added to your practice queue.')}</Text>
+              <Pressable style={styles.modalBeginBtn} onPress={beginNow}>
+                <Text style={styles.modalBeginText}>{t('discover.beginNow', 'Begin now')}</Text>
+                <ArrowRight color="#FFF" size={16} />
               </Pressable>
-            )}
-          </Pressable>
+            </View>
+          ) : (
+            <Pressable style={styles.modalQueueBtn} onPress={() => handleQueue(preview?.title)}>
+              <Text style={styles.modalQueueText}>{t('discover.addToQueue', 'Add to Queue')}</Text>
+            </Pressable>
+          )}
         </Pressable>
-      </Modal>
+      </BottomSheet>
     </View>
   );
 }
@@ -368,12 +364,67 @@ function ReferenceRow({ verse, onOpen, onQueue }: { verse: any, onOpen: () => vo
       <Pressable style={styles.refRowMain} onPress={onOpen}>
         <Text style={styles.refRowEyebrow}>{verse.topic} · {verse.translation}</Text>
         <Text style={styles.refRowTitle}>{verse.reference}</Text>
-        <Text style={styles.refRowDesc} numberOfLines={2}>{verse.text}</Text>
+        <Text style={styles.refRowDesc} numberOfLines={1}>{verse.text}</Text>
       </Pressable>
       <Pressable style={styles.refRowAddBtn} onPress={onQueue}>
-        <Plus color={Palette.primary} size={18} />
+        <Plus color={Palette.foreground} size={20} />
       </Pressable>
     </View>
+  );
+}
+
+function BottomSheet({ visible, onClose, children }: { visible: boolean, onClose: () => void, children: React.ReactNode }) {
+  const [show, setShow] = React.useState(visible);
+  const slideAnim = React.useRef(new Animated.Value(Dimensions.get('window').height)).current;
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (visible) {
+      setShow(true);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 11, useNativeDriver: true })
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: Dimensions.get('window').height, duration: 250, useNativeDriver: true })
+      ]).start(() => setShow(false));
+    }
+  }, [visible]);
+
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => g.dy > 5,
+      onPanResponderMove: (_, g) => {
+        if (g.dy > 0) slideAnim.setValue(g.dy);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 120 || g.vy > 1.2) {
+          onClose();
+        } else {
+          Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 11, useNativeDriver: true }).start();
+        }
+      }
+    })
+  ).current;
+
+  if (!show) return null;
+
+  return (
+    <Modal visible={show} transparent animationType="none" onRequestClose={onClose}>
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.4)', opacity: fadeAnim }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
+      <Animated.View 
+        {...panResponder.panHandlers}
+        style={{ flex: 1, justifyContent: 'flex-end', transform: [{ translateY: slideAnim }] }}
+        pointerEvents="box-none"
+      >
+        {children}
+      </Animated.View>
+    </Modal>
   );
 }
 
@@ -454,7 +505,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   tabText: {
-    fontFamily: Typography.sansSemiBold,
+    fontFamily: Typography.sansBold,
     fontSize: 13,
     color: Palette.mutedForeground,
   },
@@ -476,7 +527,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(0,0,0,0.03)',
     paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 40,
+    paddingBottom: 240,
   },
   eyebrow: {
     fontFamily: Typography.sansBold,
@@ -793,7 +844,7 @@ const styles = StyleSheet.create({
     bottom: 110,
     left: 16,
     right: 16,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
@@ -842,7 +893,7 @@ const styles = StyleSheet.create({
   queueActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Palette.foreground,
+    backgroundColor: 'rgb(158, 67, 36)',
     paddingHorizontal: 16,
     height: 40,
     borderRadius: 8,
@@ -854,9 +905,8 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   modalBackdrop: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: Palette.background,
@@ -917,23 +967,23 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   modalAddedText: {
-    fontFamily: Typography.sansSemiBold,
-    fontSize: 14,
-    color: Palette.sage,
+    fontFamily: Typography.sansMedium,
+    fontSize: 16,
+    color: Palette.mutedForeground,
     textAlign: 'center',
   },
   modalBeginBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Palette.foreground,
+    backgroundColor: 'rgb(158, 67, 36)',
     height: 56,
     borderRadius: 12,
     marginTop: 12,
     gap: 8,
   },
   modalBeginText: {
-    fontFamily: Typography.sansSemiBold,
+    fontFamily: Typography.sansMedium,
     fontSize: 16,
     color: '#FFF',
   },
@@ -941,14 +991,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Palette.foreground,
+    backgroundColor: 'rgb(158, 67, 36)',
     height: 56,
     borderRadius: 12,
     marginTop: 24,
     gap: 8,
   },
   modalQueueText: {
-    fontFamily: Typography.sansSemiBold,
+    fontFamily: Typography.sansMedium,
     fontSize: 16,
     color: '#FFF',
   }
