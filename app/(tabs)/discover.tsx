@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, Dimensions, Modal, Animated, PanResponder } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Search, X, ChevronRight, BookOpen, Plus, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Palette, Typography } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { BottomSheet } from '../../src/components/BottomSheet';
@@ -40,6 +40,14 @@ export default function DiscoverScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  
+  const scrollRef = useRef<ScrollView>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState('Plans');
@@ -83,7 +91,7 @@ export default function DiscoverScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20) }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
         <View style={styles.header}>

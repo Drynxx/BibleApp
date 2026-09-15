@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import {
   BookOpen,
   Check,
@@ -12,7 +12,7 @@ import {
   Share,
   UserMinus,
 } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -42,6 +42,14 @@ export default function ProgressScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [menuVisible, setMenuVisible] = useState(false);
+
+  const scrollRef = useRef<ScrollView>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   const menuOptions = [
     {
@@ -130,6 +138,7 @@ export default function ProgressScreen() {
         options={menuOptions} 
       />
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[
           styles.content,
           { paddingBottom: insets.bottom + 120 },

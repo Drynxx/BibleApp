@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import {
   ArrowRight,
   Check,
@@ -6,7 +6,7 @@ import {
   Leaf,
   Sun,
 } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   Dimensions,
   Pressable,
@@ -33,6 +33,14 @@ export default function HomeScreen() {
   const displayName = profile?.displayName || 'Sarah';
   const streak = activeCovenant?.shared_streak || 12;
   const isDoneToday = !!myTodayReview && myTodayReview.status === 'completed';
+
+  const scrollRef = useRef<ScrollView>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   const collections = [
     {
@@ -67,6 +75,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
       contentContainerStyle={[
         styles.content,

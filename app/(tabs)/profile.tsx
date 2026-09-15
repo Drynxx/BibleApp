@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,12 +6,21 @@ import { useAuth } from '../../src/services/authContext';
 import { databaseManager } from '../../src/services/db/databaseManager';
 import { Palette, Typography } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
+import { useFocusEffect } from 'expo-router';
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { signOut, updateLanguage } = useAuth();
   const [isDownloadingVDCC, setIsDownloadingVDCC] = useState(false);
+
+  const scrollRef = useRef<ScrollView>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   const handleLanguageChange = (lang: string) => {
     if (i18n.language === lang) return;
@@ -40,6 +49,7 @@ export default function ProfileScreen() {
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20) }]}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         showsVerticalScrollIndicator={false}
       >
