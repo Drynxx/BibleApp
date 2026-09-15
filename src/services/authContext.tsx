@@ -23,6 +23,7 @@ export interface UserProfile {
   inviteCode: string;
   longestStreak: number;
   preferredLanguage?: string;
+  translation?: string;
 }
 
 interface AuthContextType {
@@ -38,6 +39,7 @@ interface AuthContextType {
   signInDemo: (displayName?: string, email?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateLanguage: (lang: string) => Promise<{ error?: string }>;
+  updateOnboardingProfile: (translation: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -166,6 +168,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           inviteCode: `INSC-${currentUser.id.substring(0, 4).toUpperCase()}`,
           longestStreak: 0,
           preferredLanguage: "en",
+          translation: data?.translation,
         });
       }
     } catch {
@@ -346,6 +349,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return {};
   };
 
+  const updateOnboardingProfile = async (translation: string) => {
+    if (!user || !isSupabaseConfigured) return {};
+    
+    if (profile) {
+      setProfile({ ...profile, translation });
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ translation })
+      .eq('id', user.id);
+      
+    if (error) {
+       console.error("Error updating onboarding profile in DB", error);
+       return { error: error.message };
+    }
+    return {};
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -361,6 +383,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         signInDemo,
         signOut,
         updateLanguage,
+        updateOnboardingProfile,
       }}
     >
       {children}

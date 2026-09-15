@@ -139,7 +139,7 @@ export const CovenantProvider: React.FC<{ children: ReactNode }> = ({ children }
         (payload) => {
           if (
             payload.new && 
-            (payload.new.user_1_id === user.id || payload.new.user_2_id === user.id)
+            ((payload.new as any).user_1_id === user.id || (payload.new as any).user_2_id === user.id)
           ) {
             fetchCovenantData();
           }

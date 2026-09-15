@@ -36,11 +36,11 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === 'login';
+    const inOnboardingGroup = segments[0] === '(onboarding)';
 
-    if (!session && !inAuthGroup) {
-      router.replace('/login');
-    } else if (session && inAuthGroup) {
+    if (!session && !inOnboardingGroup) {
+      router.replace('/(onboarding)/welcome');
+    } else if (session && inOnboardingGroup) {
       router.replace('/(tabs)');
     }
   }, [session, isLoading, segments]);
@@ -55,7 +55,7 @@ function RootLayoutNav() {
           animation: 'fade',
         }}
       >
-        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="verse"
@@ -71,6 +71,7 @@ function RootLayoutNav() {
 }
 
 import { CovenantProvider } from '../src/services/covenantContext';
+import { OnboardingProvider } from '../src/services/onboardingContext';
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -101,7 +102,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <CovenantProvider>
-        <RootLayoutNav />
+        <OnboardingProvider>
+          <RootLayoutNav />
+        </OnboardingProvider>
       </CovenantProvider>
     </AuthProvider>
   );
