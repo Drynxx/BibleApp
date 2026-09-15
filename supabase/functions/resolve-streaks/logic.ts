@@ -358,6 +358,12 @@ export async function processMidnightStreakResolution(
     const dispatchResult = await dispatcher(pendingMessages);
     result.tickets = dispatchResult.tickets;
 
+    for (let i = 0; i < pendingLogs.length; i++) {
+      if (dispatchResult.tickets[i]?.id) {
+        (pendingLogs[i] as any).expo_ticket_id = dispatchResult.tickets[i].id;
+      }
+    }
+
     if (pendingLogs.length > 0) {
       await supabase.from("notification_logs").insert(pendingLogs);
     }

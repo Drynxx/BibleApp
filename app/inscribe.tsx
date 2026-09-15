@@ -23,9 +23,103 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  ZoomIn,
+} from 'react-native-reanimated';
 
 import { Palette, Typography } from '@/constants/theme';
+import { validateWord, normalizeDiacritics } from '../src/engine/blanking';
 import { BottomSheetMenu } from '../src/components/BottomSheetMenu';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+interface SpringTileProps {
+  word: string;
+  disabled?: boolean;
+  onPress: () => void;
+}
+
+const SpringTile: React.FC<SpringTileProps> = ({ word, disabled, onPress }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (disabled) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    scale.value = withSpring(0.94, { damping: 12, stiffness: 220 });
+  };
+
+  const handlePressOut = () => {
+    if (disabled) return;
+    scale.value = withSpring(1, { damping: 10, stiffness: 160 });
+  };
+
+  return (
+    <AnimatedPressable
+      disabled={disabled}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[
+        styles.optionBadge,
+        disabled ? styles.optionBadgeDisabled : styles.optionBadgeActive,
+        animatedStyle,
+      ]}
+    >
+      <Text style={[styles.optionText, disabled && styles.optionTextDisabled]}>
+        {word}
+      </Text>
+    </AnimatedPressable>
+  );
+};
+
+interface SpringButtonProps {
+  onPress: () => void;
+  children: React.ReactNode;
+  style?: any;
+  disabled?: boolean;
+}
+
+const SpringButton: React.FC<SpringButtonProps> = ({ onPress, children, style, disabled }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (disabled) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    scale.value = withSpring(0.97, { damping: 12, stiffness: 200 });
+  };
+
+  const handlePressOut = () => {
+    if (disabled) return;
+    scale.value = withSpring(1, { damping: 10, stiffness: 150 });
+  };
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={disabled}
+      style={[style, animatedStyle, disabled && { opacity: 0.5 }]}
+    >
+      {children}
+    </AnimatedPressable>
+  );
+};
 
 export default function InscribeScreen() {
   const { t } = useTranslation();
@@ -97,9 +191,9 @@ export default function InscribeScreen() {
   const close = () => router.back();
   
   const choose = (word: string) => {
-    if (picked.length >= answers.length || picked.includes(word)) return;
+    if (picked.length >= answers.length || picked.some((p) => validateWord(p, word))) return;
     const expected = answers[picked.length];
-    if (word === expected) {
+    if (validateWord(word, expected)) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setWrong(false);
       setPicked((current) => [...current, word]);
@@ -110,14 +204,17 @@ export default function InscribeScreen() {
   };
 
   const typeLetter = (value: string) => {
-    const letter = value.slice(-1).toLowerCase();
-    const expected = (words[revealed]?.match(/[a-z]/i)?.[0] ?? "").toLowerCase();
+    const rawLetter = value.slice(-1);
+    const letter = normalizeDiacritics(rawLetter);
+    const targetWord = words[revealed] ?? "";
+    const firstCharMatch = targetWord.match(/[a-zA-Z0-9ăîșțâĂÎȘȚÂşţŞŢ]/)?.[0] ?? "";
+    const expected = normalizeDiacritics(firstCharMatch);
     
-    if (letter === expected) {
+    if (letter && expected && letter === expected) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setRevealed((current) => Math.min(words.length, current + 1));
     } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     }
   };
 
@@ -195,10 +292,10 @@ function LevelOne({ t, verseRef, verseText, onNext }: { t: any, verseRef: string
       
       <Text style={styles.description}>{t('inscribe.stayWithPhrase')}</Text>
       
-      <Pressable style={({ pressed }) => [styles.button, pressed && styles.pressed]} onPress={onNext}>
+      <SpringButton style={styles.button} onPress={onNext}>
         <Text style={styles.buttonText}>{t('inscribe.imReady')}</Text>
         <ArrowRight color="#fff" size={20} />
-      </Pressable>
+      </SpringButton>
     </View>
   );
 }
@@ -228,14 +325,23 @@ function LevelTwo({ t, words, hiddenIndexes, answers, options, picked, wrong, on
             
             return (
               <Text key={index}>
-                <Text 
-                  style={[
-                    styles.blankText,
-                    isFilled ? styles.blankFilled : isWrong ? styles.blankWrong : styles.blankEmpty
-                  ]}
-                >
-                  {value ?? "______"}
-                </Text>
+                {isFilled ? (
+                  <Animated.Text 
+                    entering={ZoomIn.springify().damping(12).stiffness(160)}
+                    style={[styles.blankText, styles.blankFilled]}
+                  >
+                    {value}
+                  </Animated.Text>
+                ) : (
+                  <Text 
+                    style={[
+                      styles.blankText,
+                      isWrong ? styles.blankWrong : styles.blankEmpty
+                    ]}
+                  >
+                    {"______"}
+                  </Text>
+                )}
                 {" "}
               </Text>
             );
@@ -245,18 +351,12 @@ function LevelTwo({ t, words, hiddenIndexes, answers, options, picked, wrong, on
 
       <View style={styles.optionsContainer}>
         {options.map((word) => (
-          <Pressable 
+          <SpringTile 
             key={word} 
-            disabled={picked.includes(word) || done}
-            style={({ pressed }) => [
-              styles.optionBadge,
-              picked.includes(word) ? styles.optionBadgeDisabled : styles.optionBadgeActive,
-              pressed && styles.pressed
-            ]}
+            word={word}
+            disabled={picked.some((p) => validateWord(p, word)) || done}
             onPress={() => onChoose(word)}
-          >
-            <Text style={[styles.optionText, picked.includes(word) && styles.optionTextDisabled]}>{word}</Text>
-          </Pressable>
+          />
         ))}
       </View>
 
@@ -269,14 +369,14 @@ function LevelTwo({ t, words, hiddenIndexes, answers, options, picked, wrong, on
         <Pressable style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]} onPress={onReset}>
           <RotateCcw color={Palette.foreground} size={20} />
         </Pressable>
-        <Pressable 
+        <SpringButton 
           disabled={!done}
-          style={({ pressed }) => [styles.continueButton, !done && styles.disabledBtn, pressed && styles.pressed]} 
+          style={[styles.continueButton, !done && styles.disabledBtn]} 
           onPress={onNext}
         >
           <Text style={styles.buttonText}>{t('inscribe.continue')}</Text>
           <ArrowRight color="#fff" size={20} />
-        </Pressable>
+        </SpringButton>
       </View>
     </View>
   );
@@ -312,9 +412,9 @@ function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, o
             <Check color={Palette.sage} size={20} />
             <Text style={styles.statusCorrect}>{t('inscribe.isInscribed', { verse: 'John 3:16' })}</Text>
           </View>
-          <Pressable style={({ pressed }) => [styles.button, pressed && styles.pressed]} onPress={onClose}>
+          <SpringButton style={styles.button} onPress={onClose}>
             <Text style={styles.buttonText}>{t('inscribe.finish')}</Text>
-          </Pressable>
+          </SpringButton>
           <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]} onPress={onRestart}>
             <Text style={styles.secondaryButtonText}>{t('inscribe.practiceAgain')}</Text>
           </Pressable>

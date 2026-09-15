@@ -1,9 +1,9 @@
 import { createAdminClient } from "../_shared/supabaseClient";
-import { processRescueNudges } from "./logic";
+import { processRescueNudges, processManualPartnerNudge } from "./logic";
 
 /**
- * Supabase Edge Function Handler for 10:00 PM Rescue Nudge
- * Invoked hourly by pg_cron or Supabase webhooks.
+ * Supabase Edge Function Handler for 10:00 PM Rescue Nudge & Partner Nudge
+ * Invoked hourly by pg_cron, Supabase webhooks, or manual in-app trigger.
  */
 export default async function handler(req: Request): Promise<Response> {
   // Allow CORS preflight
@@ -27,6 +27,30 @@ export default async function handler(req: Request): Promise<Response> {
         const body = await req.json();
         if (body.referenceDate) referenceDate = new Date(body.referenceDate);
         if (body.dryRun) dryRun = Boolean(body.dryRun);
+
+        if (body.manualTrigger) {
+          const manualResult = await processManualPartnerNudge(
+            supabase,
+            {
+              covenantId: body.covenantId,
+              senderId: body.senderId,
+              partnerId: body.partnerId,
+              sharedStreak: body.sharedStreak,
+            },
+            {
+              referenceDate,
+              dryRun,
+            }
+          );
+
+          return new Response(JSON.stringify({ success: manualResult.success, result: manualResult }), {
+            status: manualResult.success ? 200 : 400,
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+          });
+        }
       } catch {
         // Empty or non-JSON body is valid for cron ping
       }

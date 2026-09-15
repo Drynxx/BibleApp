@@ -1,3 +1,22 @@
+import {
+  tokenizeVerse,
+  generateMaskedTokens,
+  normalizeDiacritics,
+  stripPunctuation,
+  validateWord,
+  validateWordDetailed,
+  calculateDrillScore,
+  getMaskPlaceholder,
+  VerseToken,
+  MaskedToken,
+  BlankingStage,
+  WordValidationResult,
+  DrillScoreInput,
+  DrillScoreResult,
+} from '../../engine/blanking';
+
+export * from '../../engine/blanking';
+
 export type PracticeToken = {
   type: 'text' | 'blank';
   value: string;
@@ -49,6 +68,16 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 export const recallEngine = {
+  // Re-export core algorithms
+  tokenizeVerse,
+  generateMaskedTokens,
+  normalizeDiacritics,
+  stripPunctuation,
+  validateWord,
+  validateWordDetailed,
+  calculateDrillScore,
+  getMaskPlaceholder,
+
   /**
    * Transforms a raw verse text into an array of practice tokens (texts and blanks).
    */
@@ -58,23 +87,21 @@ export const recallEngine = {
     const stopWords = language === 'ro' ? STOP_WORDS_RO : STOP_WORDS_EN;
     const distractors = language === 'ro' ? DISTRACTORS_RO : DISTRACTORS_EN;
 
-    // Split text keeping words and non-words (punctuation/spaces) separate.
-    // e.g. "Hello, world!" -> ["", "Hello", ", ", "world", "!"]
-    const rawTokens = rawText.split(/([a-zA-Z0-9\u00C0-\u017F]+)/);
+    // Split text keeping words and non-words (punctuation/spaces) separate
+    const rawTokens = rawText.split(/([a-zA-Z0-9ăîșțâĂÎȘȚÂşţŞŢ\u00C0-\u017F]+)/);
 
     // Identify candidate words for blanking
     const candidates: { index: number; word: string }[] = [];
     for (let i = 0; i < rawTokens.length; i++) {
       const token = rawTokens[i];
-      if (/^[a-zA-Z0-9\u00C0-\u017F]+$/.test(token)) {
-        if (!stopWords.has(token.toLowerCase())) {
+      if (/^[a-zA-Z0-9ăîșțâĂÎȘȚÂşţŞŢ\u00C0-\u017F]+$/.test(token)) {
+        if (!stopWords.has(token.toLowerCase()) && !stopWords.has(normalizeDiacritics(token))) {
           candidates.push({ index: i, word: token });
         }
       }
     }
 
     // Determine how many blanks to create based on difficulty
-    // Level 1: 1 blank, Level 2: 2 blanks, Level 3: 3 blanks, etc. (capped at candidates length)
     const numBlanks = Math.min(difficultyLevel, candidates.length);
     
     // Randomly select N candidates to become blanks
@@ -92,12 +119,12 @@ export const recallEngine = {
       if (selectedBlanks.has(i)) {
         // Generate options (3 random distractors + the correct word)
         const correctWord = token;
-        // Filter out the correct word from the pool just in case
-        let availableDistractors = distractors.filter(d => d.toLowerCase() !== correctWord.toLowerCase());
+        // Filter out the correct word from the pool using diacritic-aware validation
+        let availableDistractors = distractors.filter(d => !validateWord(d, correctWord));
         availableDistractors = shuffle(availableDistractors).slice(0, 3);
         
         // Capitalize distractors if the correct word is capitalized
-        const isCapitalized = /^[A-Z]/.test(correctWord);
+        const isCapitalized = /^[A-ZĂÎȘȚÂŞŢ]/.test(correctWord);
         const capitalizedDistractors = availableDistractors.map(d => 
           isCapitalized ? d.charAt(0).toUpperCase() + d.slice(1) : d
         );

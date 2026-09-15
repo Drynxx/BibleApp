@@ -10,6 +10,7 @@ import {
   sendExpoPushNotifications,
   buildRescueNudgeNotification,
   buildSelfReminderNotification,
+  buildManualNudgeNotification,
   isValidExpoPushToken,
 } from "../_shared/expoPush";
 
@@ -298,6 +299,13 @@ export async function processRescueNudges(
     result.tickets = dispatchResult.tickets;
     result.nudgesDispatched = dispatchResult.successCount;
 
+    // Attach expo ticket ids if available
+    for (let i = 0; i < pendingLogs.length; i++) {
+      if (dispatchResult.tickets[i]?.id) {
+        (pendingLogs[i] as any).expo_ticket_id = dispatchResult.tickets[i].id;
+      }
+    }
+
     // Record logs in notification_logs
     if (pendingLogs.length > 0) {
       await supabase.from("notification_logs").insert(pendingLogs);
@@ -308,3 +316,102 @@ export async function processRescueNudges(
 
   return result;
 }
+
+export interface ManualNudgeRequest {
+  covenantId: string;
+  senderId: string;
+  partnerId: string;
+  sharedStreak?: number;
+}
+
+export interface ManualNudgeResult {
+  success: boolean;
+  dispatched: boolean;
+  ticket?: ExpoPushTicket;
+  error?: string;
+}
+
+/**
+ * Dispatches an instant manual nudge from one partner to another,
+ * persisting the delivery record in notification_logs.
+ */
+export async function processManualPartnerNudge(
+  supabase: SupabaseClient,
+  params: ManualNudgeRequest,
+  options: {
+    pushDispatcher?: typeof sendExpoPushNotifications;
+    dryRun?: boolean;
+    referenceDate?: Date;
+  } = {}
+): Promise<ManualNudgeResult> {
+  const refDate = options.referenceDate || new Date();
+  const dispatcher = options.pushDispatcher || sendExpoPushNotifications;
+  const dryRun = options.dryRun || false;
+
+  const { data: profiles, error: profileErr } = await supabase
+    .from("profiles")
+    .select("id, display_name, timezone, locale, push_token")
+    .in("id", [params.senderId, params.partnerId]);
+
+  if (profileErr || !profiles) {
+    return {
+      success: false,
+      dispatched: false,
+      error: `Failed to fetch partner profiles: ${profileErr?.message || "Not found"}`,
+    };
+  }
+
+  const sender = profiles.find((p) => p.id === params.senderId);
+  const partner = profiles.find((p) => p.id === params.partnerId);
+
+  if (!sender || !partner) {
+    return {
+      success: false,
+      dispatched: false,
+      error: "Sender or partner profile not found",
+    };
+  }
+
+  if (!isValidExpoPushToken(partner.push_token)) {
+    return {
+      success: false,
+      dispatched: false,
+      error: "Partner does not have a valid registered push token",
+    };
+  }
+
+  const tz = normalizeTimezone(partner.timezone);
+  const dateStr = getLocalDateString(tz, refDate);
+
+  const message = buildManualNudgeNotification({
+    recipientToken: partner.push_token,
+    senderName: sender.display_name,
+    sharedStreak: params.sharedStreak ?? 0,
+    covenantId: params.covenantId,
+    locale: partner.locale,
+  });
+
+  let ticket: ExpoPushTicket | undefined;
+
+  if (!dryRun) {
+    const dispatchResult = await dispatcher([message]);
+    ticket = dispatchResult.tickets[0];
+
+    await supabase.from("notification_logs").insert({
+      covenant_id: params.covenantId,
+      recipient_id: params.partnerId,
+      partner_id: params.senderId,
+      notification_type: "manual_partner_nudge",
+      target_date: dateStr,
+      status: ticket?.status === "error" ? "failed" : "sent",
+      expo_ticket_id: ticket?.id,
+    });
+  }
+
+  return {
+    success: true,
+    dispatched: true,
+    ticket,
+  };
+}
+

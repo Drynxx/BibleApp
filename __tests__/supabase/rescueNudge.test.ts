@@ -1,4 +1,7 @@
-import { processRescueNudges } from "../../supabase/functions/rescue-nudge/logic";
+import {
+  processRescueNudges,
+  processManualPartnerNudge,
+} from "../../supabase/functions/rescue-nudge/logic";
 import { ExpoPushMessage } from "../../supabase/functions/_shared/expoPush";
 
 describe("10:00 PM Rescue Nudge Workflow (rescue-nudge/logic.ts)", () => {
@@ -260,4 +263,141 @@ describe("10:00 PM Rescue Nudge Workflow (rescue-nudge/logic.ts)", () => {
     expect(result.atRiskCount).toBe(0);
     expect(result.nudgesDispatched).toBe(0);
   });
+
+  describe("Manual Partner Nudge Workflow", () => {
+    it("dispatches an instant manual nudge to the partner and logs the record", async () => {
+      const mockProfiles = [
+        {
+          id: "sender-1",
+          display_name: "Daniel",
+          timezone: "Europe/Bucharest",
+          locale: "ro",
+          push_token: "ExponentPushToken[daniel_token]",
+        },
+        {
+          id: "partner-2",
+          display_name: "Elena",
+          timezone: "Europe/Bucharest",
+          locale: "ro",
+          push_token: "ExponentPushToken[elena_token]",
+        },
+      ];
+
+      const insertedLogs: any[] = [];
+      const dispatchedMessages: ExpoPushMessage[] = [];
+
+      const mockSupabase: any = {
+        from: (table: string) => {
+          if (table === "profiles") {
+            const builder: any = {
+              select: jest.fn(() => builder),
+              in: jest.fn(async () => ({ data: mockProfiles, error: null })),
+            };
+            return builder;
+          }
+          if (table === "notification_logs") {
+            return {
+              insert: jest.fn(async (rec: any) => {
+                insertedLogs.push(rec);
+                return { error: null };
+              }),
+            };
+          }
+          return createQueryBuilderMock(null);
+        },
+      };
+
+      const mockDispatcher = jest.fn().mockImplementation(async (messages: ExpoPushMessage[]) => {
+        dispatchedMessages.push(...messages);
+        return {
+          successCount: messages.length,
+          failureCount: 0,
+          tickets: [{ status: "ok", id: "ticket-manual-1" }],
+        };
+      });
+
+      const res = await processManualPartnerNudge(
+        mockSupabase,
+        {
+          covenantId: "cov-123",
+          senderId: "sender-1",
+          partnerId: "partner-2",
+          sharedStreak: 7,
+        },
+        {
+          pushDispatcher: mockDispatcher as any,
+          referenceDate: refTime22Bucharest,
+        }
+      );
+
+      expect(res.success).toBe(true);
+      expect(res.dispatched).toBe(true);
+      expect(res.ticket?.id).toBe("ticket-manual-1");
+
+      expect(dispatchedMessages.length).toBe(1);
+      expect(dispatchedMessages[0].to).toBe("ExponentPushToken[elena_token]");
+      expect(dispatchedMessages[0].title).toBe("⚡ Îndemn de la partener!");
+      expect(dispatchedMessages[0].body).toContain("Daniel te îndeamnă să înscrii");
+      expect(dispatchedMessages[0].body).toContain("7 zile");
+
+      expect(insertedLogs.length).toBe(1);
+      expect(insertedLogs[0].notification_type).toBe("manual_partner_nudge");
+      expect(insertedLogs[0].recipient_id).toBe("partner-2");
+      expect(insertedLogs[0].partner_id).toBe("sender-1");
+      expect(insertedLogs[0].expo_ticket_id).toBe("ticket-manual-1");
+    });
+
+    it("returns error if partner has no registered push token", async () => {
+      const mockProfiles = [
+        {
+          id: "sender-1",
+          display_name: "Daniel",
+          timezone: "Europe/Bucharest",
+          locale: "ro",
+          push_token: "ExponentPushToken[daniel_token]",
+        },
+        {
+          id: "partner-2",
+          display_name: "Elena",
+          timezone: "Europe/Bucharest",
+          locale: "ro",
+          push_token: null, // No token!
+        },
+      ];
+
+      const mockSupabase: any = {
+        from: (table: string) => {
+          if (table === "profiles") {
+            const builder: any = {
+              select: jest.fn(() => builder),
+              in: jest.fn(async () => ({ data: mockProfiles, error: null })),
+            };
+            return builder;
+          }
+          return createQueryBuilderMock(null);
+        },
+      };
+
+      const mockDispatcher = jest.fn();
+
+      const res = await processManualPartnerNudge(
+        mockSupabase,
+        {
+          covenantId: "cov-123",
+          senderId: "sender-1",
+          partnerId: "partner-2",
+          sharedStreak: 7,
+        },
+        {
+          pushDispatcher: mockDispatcher as any,
+        }
+      );
+
+      expect(res.success).toBe(false);
+      expect(res.dispatched).toBe(false);
+      expect(res.error).toContain("valid registered push token");
+      expect(mockDispatcher).not.toHaveBeenCalled();
+    });
+  });
 });
+
