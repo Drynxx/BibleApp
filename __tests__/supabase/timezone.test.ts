@@ -4,6 +4,10 @@ import {
   getYesterdayDateString,
   isTimezoneAtHour,
   normalizeTimezone,
+  getLocalEndOfDayUtc,
+  getMutualGraceCutoff,
+  isCutoffPassed,
+  evaluateRescueWindow,
   DEFAULT_TIMEZONE,
 } from "../../supabase/functions/_shared/timezone";
 
@@ -78,6 +82,55 @@ describe("Timezone Engine (_shared/timezone.ts)", () => {
       expect(isTimezoneAtHour("Europe/Bucharest", 21, date)).toBe(false);
       expect(isTimezoneAtHour("America/New_York", 22, date)).toBe(false);
       expect(isTimezoneAtHour("America/New_York", 15, date)).toBe(true);
+    });
+  });
+
+  describe("getLocalEndOfDayUtc", () => {
+    it("computes exact UTC end-of-day timestamp for local midnight", () => {
+      const bucharestMidnight = getLocalEndOfDayUtc("2026-09-12", "Europe/Bucharest");
+      expect(bucharestMidnight.toISOString()).toBe("2026-09-12T20:59:59.999Z");
+
+      const nyMidnight = getLocalEndOfDayUtc("2026-09-12", "America/New_York");
+      expect(nyMidnight.toISOString()).toBe("2026-09-13T03:59:59.999Z");
+    });
+  });
+
+  describe("getMutualGraceCutoff & isCutoffPassed", () => {
+    it("enforces Mutual Grace Cutoff Rule where the later partner's midnight defines deadline", () => {
+      const cutoff = getMutualGraceCutoff("2026-09-12", "Europe/Bucharest", "America/New_York");
+      expect(cutoff.laterTimezone).toBe("America/New_York");
+      expect(cutoff.cutoffDate.toISOString()).toBe("2026-09-13T03:59:59.999Z");
+      expect(cutoff.graceDiffMs).toBe(7 * 60 * 60 * 1000);
+    });
+
+    it("evaluates cutoff passed accurately", () => {
+      const targetDate = "2026-09-12";
+      // Before cutoff: 2026-09-12 22:00 UTC
+      const beforeCutoff = new Date("2026-09-12T22:00:00Z");
+      expect(isCutoffPassed(beforeCutoff, targetDate, "Europe/Bucharest", "America/New_York")).toBe(false);
+
+      // Past Bucharest midnight, but still before New York cutoff: 2026-09-13 01:00 UTC
+      const midnights = new Date("2026-09-13T01:00:00Z");
+      expect(isCutoffPassed(midnights, targetDate, "Europe/Bucharest", "America/New_York")).toBe(false);
+
+      // After New York cutoff: 2026-09-13 04:00:01 UTC
+      const afterBoth = new Date("2026-09-13T04:00:01Z");
+      expect(isCutoffPassed(afterBoth, targetDate, "Europe/Bucharest", "America/New_York")).toBe(true);
+    });
+  });
+
+  describe("evaluateRescueWindow", () => {
+    it("identifies AT_RISK and target recipient when completed partner is in 22:00 window", () => {
+      const refEveningBucharest = new Date("2026-09-12T19:30:00Z"); // 22:30 Bucharest
+      const p1 = { id: "u1", timezone: "Europe/Bucharest", completedToday: true };
+      const p2 = { id: "u2", timezone: "America/New_York", completedToday: false };
+
+      const rescue = evaluateRescueWindow(refEveningBucharest, p1, p2);
+      expect(rescue.isAtRisk).toBe(true);
+      expect(rescue.partner1InRescueWindow).toBe(true);
+      expect(rescue.partner2InRescueWindow).toBe(false);
+      expect(rescue.eligibleSenderId).toBe("u1");
+      expect(rescue.targetRecipientId).toBe("u2");
     });
   });
 });

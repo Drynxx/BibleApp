@@ -305,4 +305,167 @@ describe("Midnight Streak Resolution Worker (resolve-streaks/logic.ts)", () => {
     expect(result.streaksIncremented).toBe(0);
     expect(result.streaksReset).toBe(0);
   });
+
+  it("enforces Mutual Grace Cutoff Rule across timezones (Bucharest UTC+3 vs New York UTC-4)", async () => {
+    const crossTzCovenant = [
+      {
+        id: "cov-cross-tz",
+        shared_streak: 15,
+        longest_streak: 15,
+        freeze_reserves: 1,
+        status: "active",
+        last_streak_date: "2026-09-11",
+        user_1_id: "u-ro",
+        user_2_id: "u-ny",
+        user_1: {
+          id: "u-ro",
+          display_name: "Mihai",
+          timezone: "Europe/Bucharest",
+          locale: "ro",
+          push_token: "ExponentPushToken[mihai]",
+          streak_freezes_available: 0,
+        },
+        user_2: {
+          id: "u-ny",
+          display_name: "John",
+          timezone: "America/New_York",
+          locale: "en",
+          push_token: "ExponentPushToken[john]",
+          streak_freezes_available: 0,
+        },
+      },
+    ];
+
+    // At Bucharest midnight (2026-09-12 21:00:00 UTC), New York is only 17:00 (5:00 PM) on Sept 12
+    const refBucharestMidnight = new Date("2026-09-12T21:00:00Z");
+
+    const mockSupabaseAtBucharestMidnight: any = {
+      from: () => createQueryBuilderMock(crossTzCovenant),
+    };
+
+    const resultAtBucharestMidnight = await processMidnightStreakResolution(
+      mockSupabaseAtBucharestMidnight,
+      { referenceDate: refBucharestMidnight }
+    );
+
+    // Mutual grace rule: Resolution is NOT triggered yet because New York partner has 7 hours left!
+    expect(resultAtBucharestMidnight.details[0].outcome).toBe("not_midnight");
+    expect(resultAtBucharestMidnight.streaksReset).toBe(0);
+    expect(resultAtBucharestMidnight.freezesApplied).toBe(0);
+
+    // At New York midnight (2026-09-13 04:00:00 UTC), the mutual cutoff is reached!
+    const refNyMidnight = new Date("2026-09-13T04:00:00Z");
+
+    // Suppose both completed yesterday (2026-09-12)
+    const mockReviews = [
+      { user_id: "u-ro", status: "completed" },
+      { user_id: "u-ny", status: "completed" },
+    ];
+
+    let covenantUpdated: any = null;
+    const mockSupabaseAtNyMidnight: any = {
+      from: (table: string) => {
+        if (table === "covenants") {
+          const qb = createQueryBuilderMock(crossTzCovenant);
+          qb.update = jest.fn((fields: any) => {
+            covenantUpdated = fields;
+            return { eq: async () => ({ error: null }) };
+          });
+          return qb;
+        }
+        if (table === "covenant_daily_reviews") {
+          return createQueryBuilderMock(mockReviews);
+        }
+        if (table === "profiles") {
+          const qb = createQueryBuilderMock(null);
+          qb.update = jest.fn(() => ({
+            in: () => ({ lt: async () => ({ error: null }) }),
+          }));
+          return qb;
+        }
+        return createQueryBuilderMock(null);
+      },
+    };
+
+    const resultAtNyMidnight = await processMidnightStreakResolution(
+      mockSupabaseAtNyMidnight,
+      { referenceDate: refNyMidnight }
+    );
+
+    expect(resultAtNyMidnight.details[0].outcome).toBe("both_completed");
+    expect(resultAtNyMidnight.streaksIncremented).toBe(1);
+    expect(covenantUpdated?.shared_streak).toBe(16);
+    expect(covenantUpdated?.last_streak_date).toBe("2026-09-12");
+  });
+
+  it("deducts personal freeze from profile when covenant shared reserve is 0", async () => {
+    const covenantNoSharedFreeze = [
+      {
+        id: "cov-personal-freeze",
+        shared_streak: 8,
+        longest_streak: 8,
+        freeze_reserves: 0, // Covenant reserve empty!
+        status: "active",
+        last_streak_date: "2026-09-11",
+        user_1_id: "u-1",
+        user_2_id: "u-2",
+        user_1: {
+          id: "u-1",
+          display_name: "Ana",
+          timezone: "Europe/Bucharest",
+          locale: "ro",
+          push_token: "ExponentPushToken[ana]",
+          streak_freezes_available: 1, // Partner 1 has a personal freeze
+        },
+        user_2: {
+          id: "u-2",
+          display_name: "Bogdan",
+          timezone: "Europe/Bucharest",
+          locale: "ro",
+          push_token: "ExponentPushToken[bogdan]",
+          streak_freezes_available: 0,
+        },
+      },
+    ];
+
+    const mockReviews = [{ user_id: "u-1", status: "completed" }]; // u-2 failed
+    let profileUpdatedFields: any = null;
+
+    const mockSupabase: any = {
+      from: (table: string) => {
+        if (table === "covenants") {
+          const qb = createQueryBuilderMock(covenantNoSharedFreeze);
+          qb.update = jest.fn(() => ({ eq: async () => ({ error: null }) }));
+          return qb;
+        }
+        if (table === "profiles") {
+          const qb = createQueryBuilderMock(null);
+          qb.update = jest.fn((fields: any) => {
+            profileUpdatedFields = fields;
+            return { eq: async () => ({ error: null }) };
+          });
+          return qb;
+        }
+        if (table === "covenant_daily_reviews") {
+          return createQueryBuilderMock(mockReviews);
+        }
+        if (table === "notification_logs") {
+          return createQueryBuilderMock(null);
+        }
+        return createQueryBuilderMock(null);
+      },
+    };
+
+    const mockDispatcher = jest.fn().mockResolvedValue({ successCount: 2, failureCount: 0, tickets: [] });
+
+    const result = await processMidnightStreakResolution(mockSupabase, {
+      referenceDate: refMidnightBucharest,
+      pushDispatcher: mockDispatcher as any,
+    });
+
+    expect(result.freezesApplied).toBe(1);
+    expect(result.streaksReset).toBe(0);
+    expect(result.details[0].outcome).toBe("freeze_applied");
+    expect(profileUpdatedFields?.streak_freezes_available).toBe(0);
+  });
 });

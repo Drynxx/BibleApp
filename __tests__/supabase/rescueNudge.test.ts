@@ -399,5 +399,88 @@ describe("10:00 PM Rescue Nudge Workflow (rescue-nudge/logic.ts)", () => {
       expect(mockDispatcher).not.toHaveBeenCalled();
     });
   });
+
+  describe("Cross-Timezone 10:00 PM Behavior", () => {
+    it("notifies Bucharest partner at 22:00 Bucharest time, and New York partner at 22:00 NY time", async () => {
+      const mockCovenants = [
+        {
+          id: "cov-cross-tz-nudge",
+          shared_streak: 25,
+          status: "active",
+          user_1_id: "u-ro",
+          user_2_id: "u-ny",
+          user_1: {
+            id: "u-ro",
+            display_name: "Mihai",
+            timezone: "Europe/Bucharest",
+            locale: "ro",
+            push_token: "ExponentPushToken[mihai_ro]",
+          },
+          user_2: {
+            id: "u-ny",
+            display_name: "Sarah",
+            timezone: "America/New_York",
+            locale: "en",
+            push_token: "ExponentPushToken[sarah_ny]",
+          },
+        },
+      ];
+
+      // Mihai is completed; Sarah is pending
+      const mockReviews = [{ user_id: "u-ro", status: "completed" }];
+
+      const mockSupabase: any = {
+        from: (table: string) => {
+          if (table === "covenants") return createQueryBuilderMock(mockCovenants);
+          if (table === "covenant_daily_reviews") return createQueryBuilderMock(mockReviews);
+          if (table === "notification_logs") {
+            const builder = createQueryBuilderMock(null);
+            builder.insert = jest.fn(async () => ({ error: null }));
+            return builder;
+          }
+          return createQueryBuilderMock(null);
+        },
+      };
+
+      // 1. At 19:00 UTC (22:00 in Bucharest, 15:00 in New York)
+      const refBucharestEvening = new Date("2026-09-12T19:00:00Z");
+      const messagesBucharest: ExpoPushMessage[] = [];
+      const dispatcherBucharest = jest.fn().mockImplementation(async (msgs: ExpoPushMessage[]) => {
+        messagesBucharest.push(...msgs);
+        return { successCount: msgs.length, failureCount: 0, tickets: msgs.map(() => ({ status: "ok" })) };
+      });
+
+      const resBucharest = await processRescueNudges(mockSupabase, {
+        referenceDate: refBucharestEvening,
+        pushDispatcher: dispatcherBucharest as any,
+      });
+
+      // Mihai gets rescue nudge; Sarah is at 15:00 so she does NOT get 10 PM reminder yet
+      expect(resBucharest.atRiskCount).toBe(1);
+      expect(resBucharest.nudgesDispatched).toBe(1);
+      expect(messagesBucharest[0].to).toBe("ExponentPushToken[mihai_ro]");
+      expect(messagesBucharest[0].title).toBe("🔥 Streak în pericol!");
+      expect(messagesBucharest[0].body).toContain("Sarah nu a înscris încă versetul de azi");
+
+      // 2. At 02:00 UTC next day (22:00 in New York, 05:00 next day in Bucharest)
+      const refNyEvening = new Date("2026-09-13T02:00:00Z");
+      const messagesNy: ExpoPushMessage[] = [];
+      const dispatcherNy = jest.fn().mockImplementation(async (msgs: ExpoPushMessage[]) => {
+        messagesNy.push(...msgs);
+        return { successCount: msgs.length, failureCount: 0, tickets: msgs.map(() => ({ status: "ok" })) };
+      });
+
+      const resNy = await processRescueNudges(mockSupabase, {
+        referenceDate: refNyEvening,
+        pushDispatcher: dispatcherNy as any,
+      });
+
+      // Sarah now reaches 22:00 in New York and gets self reminder!
+      expect(resNy.nudgesDispatched).toBe(1);
+      expect(messagesNy[0].to).toBe("ExponentPushToken[sarah_ny]");
+      expect(messagesNy[0].title).toBe("⏰ 10:00 PM — Keep the Covenant!");
+      expect(messagesNy[0].body).toContain("2 hours left today!");
+    });
+  });
 });
 

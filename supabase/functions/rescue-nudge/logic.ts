@@ -96,17 +96,23 @@ export async function processRescueNudges(
 
     if (!u1 || !u2) continue;
 
-    // Evaluate User 1
     const tz1 = normalizeTimezone(u1.timezone);
-    const hour1 = getLocalHour(tz1, refDate);
-    const dateStr1 = getLocalDateString(tz1, refDate);
+    const tz2 = normalizeTimezone(u2.timezone);
 
+    const hour1 = getLocalHour(tz1, refDate);
+    const hour2 = getLocalHour(tz2, refDate);
+
+    const dateStr1 = getLocalDateString(tz1, refDate);
+    const dateStr2 = getLocalDateString(tz2, refDate);
+
+    // Evaluate User 1
     if (hour1 === 22) {
+      const dates1 = dateStr1 === dateStr2 ? [dateStr1] : [dateStr1, dateStr2];
       const { data: reviews1 } = await supabase
         .from("covenant_daily_reviews")
         .select("user_id, status")
         .eq("covenant_id", cov.id)
-        .eq("review_date", dateStr1);
+        .in("review_date", dates1);
 
       const u1Done = reviews1?.some((r) => r.user_id === u1.id && r.status === "completed") ?? false;
       const u2Done = reviews1?.some((r) => r.user_id === u2.id && r.status === "completed") ?? false;
@@ -195,16 +201,13 @@ export async function processRescueNudges(
     }
 
     // Evaluate User 2
-    const tz2 = normalizeTimezone(u2.timezone);
-    const hour2 = getLocalHour(tz2, refDate);
-    const dateStr2 = getLocalDateString(tz2, refDate);
-
     if (hour2 === 22) {
+      const dates2 = dateStr1 === dateStr2 ? [dateStr2] : [dateStr1, dateStr2];
       const { data: reviews2 } = await supabase
         .from("covenant_daily_reviews")
         .select("user_id, status")
         .eq("covenant_id", cov.id)
-        .eq("review_date", dateStr2);
+        .in("review_date", dates2);
 
       const u1Done = reviews2?.some((r) => r.user_id === u1.id && r.status === "completed") ?? false;
       const u2Done = reviews2?.some((r) => r.user_id === u2.id && r.status === "completed") ?? false;

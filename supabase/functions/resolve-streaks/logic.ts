@@ -3,6 +3,8 @@ import {
   getLocalHour,
   getYesterdayDateString,
   normalizeTimezone,
+  getMutualGraceCutoff,
+  isCutoffPassed,
 } from "../_shared/timezone";
 import {
   ExpoPushMessage,
@@ -105,21 +107,26 @@ export async function processMidnightStreakResolution(
     const hour1 = getLocalHour(tz1, refDate);
     const hour2 = getLocalHour(tz2, refDate);
 
-    // Day ends at midnight (hour === 0) in the covenant's operational timezone
-    // If either partner's clock is 0:00, check if yesterday's cutoff needs resolution
-    const isMidnightHour = hour1 === 0 || hour2 === 0;
+    // Mutual Grace Cutoff Rule:
+    // A calendar day's streak is evaluated against the later partner's midnight.
+    // Determine which partner's timezone defines the mutual cutoff for the candidate day.
+    const approxDate = getYesterdayDateString(tz1, refDate);
+    const { laterTimezone } = getMutualGraceCutoff(approxDate, tz1, tz2);
+    const laterHour = getLocalHour(laterTimezone, refDate);
+    const yesterdayDate = getYesterdayDateString(laterTimezone, refDate);
+
+    // Midnight resolution evaluates when the later partner reaches midnight (hour 0)
+    const isMidnightHour = laterHour === 0;
 
     if (!isMidnightHour) {
       result.details.push({
         covenantId: cov.id,
         outcome: "not_midnight",
-        targetDate: getYesterdayDateString(tz1, refDate),
+        targetDate: yesterdayDate,
         sharedStreak: cov.shared_streak,
       });
       continue;
     }
-
-    const yesterdayDate = getYesterdayDateString(tz1, refDate);
 
     // Check if already resolved for yesterday
     if (cov.last_streak_date === yesterdayDate) {
@@ -194,25 +201,59 @@ export async function processMidnightStreakResolution(
       });
     } else {
       // SCENARIO 2: One or both failed!
-      const totalFreezesAvailable =
-        (cov.freeze_reserves || 0) +
-        (u1.streak_freezes_available || 0) +
-        (u2.streak_freezes_available || 0);
+      const covFreezes = cov.freeze_reserves || 0;
+      const u1Freezes = u1.streak_freezes_available || 0;
+      const u2Freezes = u2.streak_freezes_available || 0;
+      const totalFreezesAvailable = covFreezes + u1Freezes + u2Freezes;
 
       if (totalFreezesAvailable > 0) {
         // Sub-case A: Streak Freeze saves the streak!
-        const remainingCovenantFreezes = Math.max(0, (cov.freeze_reserves || 0) - 1);
-
         if (!dryRun) {
-          // Decrement covenant freeze reserve
-          await supabase
-            .from("covenants")
-            .update({
-              freeze_reserves: remainingCovenantFreezes,
-              last_streak_date: yesterdayDate,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", cov.id);
+          if (covFreezes > 0) {
+            // Priority 1: Decrement covenant shared freeze reserve
+            await supabase
+              .from("covenants")
+              .update({
+                freeze_reserves: covFreezes - 1,
+                last_streak_date: yesterdayDate,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", cov.id);
+          } else if (u1Freezes > 0) {
+            // Priority 2: Decrement partner 1 personal freeze
+            await supabase
+              .from("profiles")
+              .update({
+                streak_freezes_available: u1Freezes - 1,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", u1.id);
+
+            await supabase
+              .from("covenants")
+              .update({
+                last_streak_date: yesterdayDate,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", cov.id);
+          } else if (u2Freezes > 0) {
+            // Priority 3: Decrement partner 2 personal freeze
+            await supabase
+              .from("profiles")
+              .update({
+                streak_freezes_available: u2Freezes - 1,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", u2.id);
+
+            await supabase
+              .from("covenants")
+              .update({
+                last_streak_date: yesterdayDate,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", cov.id);
+          }
 
           // Record freeze review rows for missing partners
           const freezeInserts: Array<{
@@ -300,6 +341,7 @@ export async function processMidnightStreakResolution(
             .from("covenants")
             .update({
               shared_streak: 0,
+              last_streak_date: yesterdayDate,
               updated_at: new Date().toISOString(),
             })
             .eq("id", cov.id);

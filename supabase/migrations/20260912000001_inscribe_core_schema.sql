@@ -7,6 +7,7 @@
 -- 1. Extensions
 create extension if not exists "uuid-ossp";
 create extension if not exists "pg_cron";
+create extension if not exists "pg_net";
 
 -- 2. User Profiles Table (Linked to auth.users)
 create table if not exists public.profiles (
@@ -451,21 +452,43 @@ alter publication supabase_realtime add table public.covenant_daily_reviews;
 -- Runs every hour at minute 0: evaluates 10:00 PM nudges and midnight streak cutoffs
 create or replace function public.cron_process_hourly_events()
 returns void as $$
+declare
+  v_base_url text;
+  v_service_key text;
 begin
-  -- Supabase pg_net / Edge Function HTTP trigger can be invoked here:
-  -- perform net.http_post(
-  --   url := 'https://<project-ref>.functions.supabase.co/rescue-nudge',
-  --   headers := '{"Content-Type": "application/json", "Authorization": "Bearer <service-role-key>"}'::jsonb,
-  --   body := '{}'::jsonb
-  -- );
-  -- perform net.http_post(
-  --   url := 'https://<project-ref>.functions.supabase.co/resolve-streaks',
-  --   headers := '{"Content-Type": "application/json", "Authorization": "Bearer <service-role-key>"}'::jsonb,
-  --   body := '{}'::jsonb
-  -- );
-  null;
+  -- Resolve Edge Function base URL and service role key from settings or project defaults
+  v_base_url := coalesce(
+    current_setting('app.settings.edge_function_url', true),
+    'https://project-ref.functions.supabase.co'
+  );
+  v_service_key := coalesce(
+    current_setting('app.settings.service_role_key', true),
+    ''
+  );
+
+  -- Invoke 10:00 PM Rescue Nudge Edge Function via pg_net if available
+  if exists (select 1 from pg_extension where extname = 'pg_net') then
+    perform net.http_post(
+      url := v_base_url || '/rescue-nudge',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || v_service_key
+      ),
+      body := '{}'::jsonb
+    );
+
+    -- Invoke Midnight Streak Resolution Edge Function via pg_net
+    perform net.http_post(
+      url := v_base_url || '/resolve-streaks',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || v_service_key
+      ),
+      body := '{}'::jsonb
+    );
+  end if;
 end;
-$$ language plpgsql;
+$$ language plpgsql security definer;
 
 -- Schedule with pg_cron
 do $$
