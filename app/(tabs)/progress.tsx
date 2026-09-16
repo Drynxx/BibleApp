@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { Palette, Typography } from '@/constants/theme';
 import { useCovenant } from '../../src/services/covenantContext';
 import { BottomSheetMenu } from '../../src/components/BottomSheetMenu';
+import { DuoDashboardCard } from '../../src/components/streak/DuoDashboardCard';
 
 const months = ['October 2024', 'November 2024', 'December 2024'];
 const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -171,32 +172,8 @@ export default function ProgressScreen() {
         </View>
       </View>
 
-      {/* Partner Status Card */}
-      {partnerProfile && (
-        <View style={[styles.card, { marginTop: 24 }]}>
-          <View style={styles.cardHeader}>
-            <View>
-              <Text style={styles.cardTitle}>{t('progress.partnerTitle')}</Text>
-              <Text style={styles.cardSubtitle}>{t('progress.partnerSubtitle')}</Text>
-            </View>
-            <View style={[styles.monthPill, partnerDone ? { backgroundColor: Palette.primary } : {}]}>
-              <Text style={[styles.monthPillText, partnerDone ? { color: '#FFF' } : {}]}>
-                {partnerDone ? 'Done' : 'Pending'}
-              </Text>
-            </View>
-          </View>
-          <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={[styles.navArrow, { width: 40, height: 40, borderRadius: 20 }]}>
-              <Text style={{ fontFamily: Typography.sansBold, color: Palette.primary, fontSize: 16 }}>
-                {partnerName.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-            <Text style={{ fontFamily: Typography.sansMedium, fontSize: 16, color: Palette.foreground }}>
-              {partnerName}
-            </Text>
-          </View>
-        </View>
-      )}
+      {/* Duo Streak Mutual Fate Dashboard Card */}
+      <DuoDashboardCard onPressDrill={() => router.push('/inscribe')} />
 
       {/* Practice Days Calendar Card */}
       <View style={styles.card}>
@@ -385,14 +362,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Palette.mutedForeground,
     marginTop: 10,
-  },
-  iconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.03)',
   },
   pressed: {
     opacity: 0.6,

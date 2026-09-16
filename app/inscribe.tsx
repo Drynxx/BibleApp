@@ -4,16 +4,20 @@ import {
   ArrowRight,
   Book,
   Check,
+  Flame,
   Leaf,
+  Lightbulb,
   MoreVertical,
   RotateCcw,
   Share,
+  Sparkles,
+  Timer,
   Trash2,
   X,
+  Zap,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,8 +35,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Palette, Typography } from '@/constants/theme';
-import { validateWord, normalizeDiacritics } from '../src/engine/blanking';
+import { useDrillEngine } from '../src/hooks/useDrillEngine';
+import { useCovenant } from '../src/services/covenantContext';
 import { BottomSheetMenu } from '../src/components/BottomSheetMenu';
+import { BlankingStage, DrillScoreResult } from '../src/engine/blanking';
+import { DuoFlame } from '../src/components/streak/DuoFlame';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -54,12 +61,12 @@ const SpringTile: React.FC<SpringTileProps> = ({ word, disabled, onPress }) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    scale.value = withSpring(0.94, { damping: 12, stiffness: 220 });
+    scale.value = withSpring(0.93, { damping: 12, stiffness: 240 });
   };
 
   const handlePressOut = () => {
     if (disabled) return;
-    scale.value = withSpring(1, { damping: 10, stiffness: 160 });
+    scale.value = withSpring(1, { damping: 10, stiffness: 180 });
   };
 
   return (
@@ -100,12 +107,12 @@ const SpringButton: React.FC<SpringButtonProps> = ({ onPress, children, style, d
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    scale.value = withSpring(0.97, { damping: 12, stiffness: 200 });
+    scale.value = withSpring(0.97, { damping: 12, stiffness: 220 });
   };
 
   const handlePressOut = () => {
     if (disabled) return;
-    scale.value = withSpring(1, { damping: 10, stiffness: 150 });
+    scale.value = withSpring(1, { damping: 10, stiffness: 160 });
   };
 
   return (
@@ -125,110 +132,117 @@ export default function InscribeScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  
-  const verseText = t('inscribe.verseText');
-  const words = verseText.split(" ");
-  const hiddenIndexes = t('inscribe.hiddenIndexes', { returnObjects: true }) as number[];
-  const answers = hiddenIndexes.map((index) => words[index] ?? "");
-  const options = t('inscribe.options', { returnObjects: true }) as string[];
-  const verseRef = t('inscribe.verseRef');
-  
-  const [level, setLevel] = useState(1);
-  const [picked, setPicked] = useState<string[]>([]);
-  const [wrong, setWrong] = useState(false);
-  const [revealed, setRevealed] = useState(0);
+  const { completeDailyReview, activeCovenant } = useCovenant();
+
+  const verseText = t(
+    'inscribe.verseText',
+    'Să nu te părăsească bunătatea și credincioșia: leagă-le la gât, scrie-le pe tăblița inimii tale!'
+  );
+  const verseRef = t('inscribe.verseRef', 'Proverbe 3:3');
+
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [drillCompleted, setDrillCompleted] = useState(false);
+  const [finalScore, setFinalScore] = useState<DrillScoreResult | null>(null);
+
   const inputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const complete = revealed === words.length;
-  const [menuVisible, setMenuVisible] = useState(false);
+
+  // Core Engine Integration
+  const {
+    state,
+    start,
+    submitWord,
+    undoPlacement,
+    selectBlank,
+    useFirstLetterHint,
+    advanceStage,
+    finishDrill,
+    reset,
+  } = useDrillEngine({
+    verseText,
+    verseRef,
+    initialStage: 1,
+    timeLimitSeconds: 60,
+    onDrillComplete: async (score) => {
+      setFinalScore(score);
+      setDrillCompleted(true);
+      // Sync covenant streak progression
+      try {
+        await completeDailyReview();
+      } catch {}
+    },
+  });
+
+  const level = state.currentStage;
+
+  useEffect(() => {
+    start();
+  }, [start]);
+
+  useEffect(() => {
+    if (level === 4) {
+      setTimeout(() => inputRef.current?.focus(), 400);
+    }
+  }, [level]);
+
+  const close = () => router.back();
 
   const menuOptions = [
     {
       label: t('inscribe.menu.share', 'Share Verse'),
       description: t('inscribe.menu.shareDesc', 'Send this beautiful verse to a friend.'),
       icon: <Share size={18} color={Palette.foreground} />,
-      onPress: () => { /* TODO: trigger share */ }
+      onPress: () => {},
     },
     {
       label: t('inscribe.menu.changeTranslation', 'Change Translation'),
       description: t('inscribe.menu.changeTranslationDesc', 'Switch this specific verse to another version.'),
       icon: <Book size={18} color={Palette.foreground} />,
-      onPress: () => { /* TODO: trigger change translation */ }
+      onPress: () => {},
     },
     {
       label: t('inscribe.menu.resetProgress', 'Reset Progress'),
       description: t('inscribe.menu.resetProgressDesc', 'I totally forgot this one; drop it back to Step 1.'),
       icon: <RotateCcw size={18} color={Palette.foreground} />,
-      onPress: () => { 
-        setLevel(1);
-        setPicked([]);
-        setRevealed(0);
-      }
+      onPress: () => {
+        reset(1);
+        setDrillCompleted(false);
+      },
     },
     {
       label: t('inscribe.menu.removeQueue', 'Remove from Queue'),
       description: t('inscribe.menu.removeQueueDesc', 'I no longer want to memorize this verse.'),
       icon: <Trash2 size={18} color="#EF4444" />,
       destructive: true,
-      onPress: () => { close(); }
-    }
+      onPress: () => {
+        close();
+      },
+    },
   ];
 
-  useEffect(() => {
-    if (level === 3) {
-      setTimeout(() => inputRef.current?.focus(), 500);
-    }
-  }, [level]);
-
-  useEffect(() => {
-    if (level === 3 && revealed > 0) {
-      setTimeout(() => {
-        scrollRef.current?.scrollToEnd({ animated: true });
-      }, 50);
-    }
-  }, [revealed, level]);
-
-  const close = () => router.back();
-  
-  const choose = (word: string) => {
-    if (picked.length >= answers.length || picked.some((p) => validateWord(p, word))) return;
-    const expected = answers[picked.length];
-    if (validateWord(word, expected)) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setWrong(false);
-      setPicked((current) => [...current, word]);
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setWrong(true);
-    }
-  };
-
-  const typeLetter = (value: string) => {
+  // Level 4 typing handler
+  const handleTypeLetter = (value: string) => {
     const rawLetter = value.slice(-1);
-    const letter = normalizeDiacritics(rawLetter);
-    const targetWord = words[revealed] ?? "";
-    const firstCharMatch = targetWord.match(/[a-zA-Z0-9ăîșțâĂÎȘȚÂşţŞŢ]/)?.[0] ?? "";
-    const expected = normalizeDiacritics(firstCharMatch);
-    
-    if (letter && expected && letter === expected) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setRevealed((current) => Math.min(words.length, current + 1));
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    }
-  };
+    if (!rawLetter) return;
 
-  const handleFocus = () => {
-    if (inputRef.current?.isFocused()) {
-      inputRef.current?.blur();
-      setTimeout(() => inputRef.current?.focus(), 100);
-    } else {
-      inputRef.current?.focus();
+    const activeBlank =
+      state.maskedTokens.find((t) => t.isMasked && !t.isCorrect) || null;
+
+    if (activeBlank) {
+      submitWord(rawLetter, activeBlank.id);
     }
   };
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20), paddingBottom: insets.bottom + 20 }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: Math.max(insets.top + 8, 20),
+          paddingBottom: insets.bottom + 20,
+        },
+      ]}
+    >
       {/* Header */}
       <View style={styles.header}>
         <Pressable
@@ -238,11 +252,31 @@ export default function InscribeScreen() {
         >
           <X color={Palette.foreground} size={20} />
         </Pressable>
-        
+
+        {/* 4-Stage Progressive Dots */}
         <View style={styles.progressContainer}>
-          {[1, 2, 3].map((item) => (
-            <View key={item} style={[styles.progressDot, item <= level ? styles.progressDotActive : styles.progressDotInactive]} />
+          {[1, 2, 3, 4].map((stageNum) => (
+            <View
+              key={stageNum}
+              style={[
+                styles.progressDot,
+                stageNum <= level ? styles.progressDotActive : styles.progressDotInactive,
+              ]}
+            />
           ))}
+        </View>
+
+        {/* 60s Micro-Timer Counter */}
+        <View style={styles.timerBadge}>
+          <Timer size={13} color={state.elapsedSeconds <= 60 ? Palette.primary : '#EF4444'} />
+          <Text
+            style={[
+              styles.timerText,
+              state.elapsedSeconds > 60 && { color: '#EF4444' },
+            ]}
+          >
+            {state.elapsedSeconds}s
+          </Text>
         </View>
 
         <Pressable
@@ -254,127 +288,220 @@ export default function InscribeScreen() {
         </Pressable>
       </View>
 
-      <BottomSheetMenu 
-        visible={menuVisible} 
-        onClose={() => setMenuVisible(false)} 
-        options={menuOptions} 
+      <BottomSheetMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        options={menuOptions}
       />
 
-      <ScrollView 
+      <ScrollView
         ref={scrollRef}
-        contentContainerStyle={styles.scrollContent} 
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={true}
       >
-        {level === 1 && <LevelOne t={t} verseRef={verseRef} verseText={verseText} onNext={() => setLevel(2)} />}
-        {level === 2 && <LevelTwo t={t} words={words} hiddenIndexes={hiddenIndexes} answers={answers} options={options} picked={picked} wrong={wrong} onChoose={choose} onReset={() => { setPicked([]); setWrong(false); }} onNext={() => setLevel(3)} />}
-        {level === 3 && <LevelThree t={t} words={words} revealed={revealed} complete={complete} inputRef={inputRef} onType={typeLetter} onFocus={handleFocus} onRestart={() => { setLevel(1); setPicked([]); setRevealed(0); }} onClose={close} />}
+        {drillCompleted ? (
+          <CompletionView
+            score={finalScore}
+            streak={activeCovenant?.shared_streak || 1}
+            onFinish={close}
+            onPracticeAgain={() => {
+              setDrillCompleted(false);
+              reset(1);
+            }}
+          />
+        ) : (
+          <>
+            {level === 1 && (
+              <LevelOne
+                verseRef={verseRef}
+                verseText={verseText}
+                onNext={() => advanceStage(2)}
+              />
+            )}
+
+            {level === 2 && (
+              <LevelInteractive
+                stageNumber={2}
+                eyebrow="Step 2 of 4 • Partial Masking"
+                title="Fill the Blanks"
+                subtitle="Tap words from the bank to complete the scripture."
+                maskedTokens={state.maskedTokens}
+                wordBank={state.wordBank}
+                isStageComplete={state.status === 'stage_completed'}
+                onChoose={(word) => submitWord(word)}
+                onUndo={(id) => undoPlacement(id)}
+                onReset={() => reset(2)}
+                onNext={() => advanceStage(3)}
+              />
+            )}
+
+            {level === 3 && (
+              <LevelInteractive
+                stageNumber={3}
+                eyebrow="Step 3 of 4 • Deep Recall"
+                title="Advanced Retention"
+                subtitle="Over 70% of words are concealed. Trust your memory."
+                maskedTokens={state.maskedTokens}
+                wordBank={state.wordBank}
+                isStageComplete={state.status === 'stage_completed'}
+                onChoose={(word) => submitWord(word)}
+                onUndo={(id) => undoPlacement(id)}
+                onReset={() => reset(3)}
+                onNext={() => advanceStage(4)}
+              />
+            )}
+
+            {level === 4 && (
+              <LevelFourMastery
+                maskedTokens={state.maskedTokens}
+                inputRef={inputRef}
+                onType={handleTypeLetter}
+                onHint={() => useFirstLetterHint()}
+                onFinish={() => finishDrill()}
+                onRestart={() => reset(1)}
+              />
+            )}
+          </>
+        )}
       </ScrollView>
     </View>
   );
 }
 
-function LevelOne({ t, verseRef, verseText, onNext }: { t: any, verseRef: string, verseText: string, onNext: () => void }) {
+// Level 1: Read & Reflect (0% masked familiarization)
+function LevelOne({
+  verseRef,
+  verseText,
+  onNext,
+}: {
+  verseRef: string;
+  verseText: string;
+  onNext: () => void;
+}) {
   return (
     <View style={styles.levelContainer}>
-      <Text style={styles.eyebrow}>{t('inscribe.levelOneEyebrow')}</Text>
-      <Text style={styles.title}>{t('inscribe.readReflect')}</Text>
-      
+      <Text style={styles.eyebrow}>Step 1 of 4 • Familiarization</Text>
+      <Text style={styles.title}>Read & Reflect</Text>
+
       <View style={styles.cardContainer}>
         <View style={styles.blobOne} />
         <View style={styles.blobTwo} />
         <Leaf color="rgba(158, 67, 36, 0.2)" size={90} strokeWidth={1} style={styles.bgIcon} />
-        
+
         <Text style={styles.cardEyebrow}>{verseRef}</Text>
         <Text style={styles.quote}>“{verseText}”</Text>
       </View>
-      
-      <Text style={styles.description}>{t('inscribe.stayWithPhrase')}</Text>
-      
+
+      <Text style={styles.description}>
+        Read the verse slowly. Commit the cadence and truth of the Word to your heart.
+      </Text>
+
       <SpringButton style={styles.button} onPress={onNext}>
-        <Text style={styles.buttonText}>{t('inscribe.imReady')}</Text>
+        <Text style={styles.buttonText}>I'm Ready</Text>
         <ArrowRight color="#fff" size={20} />
       </SpringButton>
     </View>
   );
 }
 
-function LevelTwo({ t, words, hiddenIndexes, answers, options, picked, wrong, onChoose, onReset, onNext }: { t: any, words: string[], hiddenIndexes: number[], answers: string[], options: string[], picked: string[]; wrong: boolean; onChoose: (word: string) => void; onReset: () => void; onNext: () => void }) {
-  const done = picked.length === answers.length;
-  let blank = 0;
-  
+// Interactive Levels (Stage 2 & Stage 3)
+function LevelInteractive({
+  eyebrow,
+  title,
+  subtitle,
+  maskedTokens,
+  wordBank,
+  isStageComplete,
+  onChoose,
+  onUndo,
+  onReset,
+  onNext,
+}: {
+  stageNumber: number;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  maskedTokens: any[];
+  wordBank: string[];
+  isStageComplete: boolean;
+  onChoose: (word: string) => void;
+  onUndo: (tokenId: string) => void;
+  onReset: () => void;
+  onNext: () => void;
+}) {
   return (
     <View style={styles.levelContainer}>
-      <Text style={styles.eyebrow}>{t('inscribe.levelTwoEyebrow')}</Text>
-      <Text style={styles.title}>{t('inscribe.completeVerse')}</Text>
-      <Text style={styles.subtitle}>{t('inscribe.chooseMissing')}</Text>
-      
+      <Text style={styles.eyebrow}>{eyebrow}</Text>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.subtitle}>{subtitle}</Text>
+
+      {/* Interactive Verse Canvas */}
       <View style={styles.weaveQuoteContainer}>
         <Text style={styles.weaveQuote}>
-          {words.map((word, index) => {
-            if (!hiddenIndexes.includes(index)) {
-              return <Text key={index}>{word} </Text>;
+          {maskedTokens.map((token, idx) => {
+            if (!token.isMasked) {
+              return <Text key={token.id || idx}>{token.raw} </Text>;
             }
-            const value = picked[blank];
-            const current = blank;
-            blank += 1;
-            
-            const isWrong = current === picked.length && wrong;
-            const isFilled = !!value;
-            
+
+            const isFilled = token.isCorrect && !!token.userPlacedText;
+
             return (
-              <Text key={index}>
+              <Text key={token.id || idx}>
                 {isFilled ? (
-                  <Animated.Text 
+                  <Animated.Text
                     entering={ZoomIn.springify().damping(12).stiffness(160)}
+                    onPress={() => onUndo(token.id)}
                     style={[styles.blankText, styles.blankFilled]}
                   >
-                    {value}
+                    {token.userPlacedText}
                   </Animated.Text>
                 ) : (
-                  <Text 
-                    style={[
-                      styles.blankText,
-                      isWrong ? styles.blankWrong : styles.blankEmpty
-                    ]}
-                  >
-                    {"______"}
+                  <Text style={[styles.blankText, styles.blankEmpty]}>
+                    {token.firstLetter ? `${token.firstLetter}____` : '_____'}
                   </Text>
                 )}
-                {" "}
+                {' '}
               </Text>
             );
           })}
         </Text>
       </View>
 
+      {/* Scrambled Word Bank Tiles */}
       <View style={styles.optionsContainer}>
-        {options.map((word) => (
-          <SpringTile 
-            key={word} 
+        {wordBank.map((word, idx) => (
+          <SpringTile
+            key={`${word}-${idx}`}
             word={word}
-            disabled={picked.some((p) => validateWord(p, word)) || done}
+            disabled={isStageComplete}
             onPress={() => onChoose(word)}
           />
         ))}
       </View>
 
+      {/* Status Bar */}
       <View style={styles.statusContainer}>
-        {wrong && <Text style={styles.statusWrong}>{t('inscribe.tryAnother')}</Text>}
-        {done && <Text style={styles.statusCorrect}>{t('inscribe.wovenTogether')}</Text>}
+        {isStageComplete && (
+          <Text style={styles.statusCorrect}>Well done! Verse inscribed accurately.</Text>
+        )}
       </View>
 
+      {/* Bottom Action Buttons */}
       <View style={styles.actionsRow}>
-        <Pressable style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]} onPress={onReset}>
+        <Pressable
+          style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]}
+          onPress={onReset}
+        >
           <RotateCcw color={Palette.foreground} size={20} />
         </Pressable>
-        <SpringButton 
-          disabled={!done}
-          style={[styles.continueButton, !done && styles.disabledBtn]} 
+        <SpringButton
+          disabled={!isStageComplete}
+          style={[styles.continueButton, !isStageComplete && styles.disabledBtn]}
           onPress={onNext}
         >
-          <Text style={styles.buttonText}>{t('inscribe.continue')}</Text>
+          <Text style={styles.buttonText}>Continue</Text>
           <ArrowRight color="#fff" size={20} />
         </SpringButton>
       </View>
@@ -382,20 +509,54 @@ function LevelTwo({ t, words, hiddenIndexes, answers, options, picked, wrong, on
   );
 }
 
-function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, onRestart, onClose }: { t: any, words: string[], revealed: number; complete: boolean; inputRef: React.RefObject<TextInput | null>; onType: (value: string) => void; onFocus: () => void; onRestart: () => void; onClose: () => void }) {
+// Level 4: Mastery (100% canvas masked / first-letter prompt recitation)
+function LevelFourMastery({
+  maskedTokens,
+  inputRef,
+  onType,
+  onHint,
+  onFinish,
+  onRestart,
+}: {
+  maskedTokens: any[];
+  inputRef: React.RefObject<TextInput | null>;
+  onType: (val: string) => void;
+  onHint: () => void;
+  onFinish: () => void;
+  onRestart: () => void;
+}) {
+  const solvedCount = maskedTokens.filter((t) => t.isMasked && t.isCorrect).length;
+  const totalBlanks = maskedTokens.filter((t) => t.isMasked).length;
+  const isComplete = solvedCount === totalBlanks && totalBlanks > 0;
+
   return (
-    <Pressable style={styles.levelContainer} onPress={onFocus}>
-      <Text style={styles.eyebrow}>{t('inscribe.levelThreeEyebrow')}</Text>
-      <Text style={styles.title}>{t('inscribe.recallWithin')}</Text>
-      <Text style={styles.subtitle}>{t('inscribe.typeFirstLetter')}</Text>
-      
+    <View style={styles.levelContainer}>
+      <Text style={styles.eyebrow}>Step 4 of 4 • Full Mastery</Text>
+      <Text style={styles.title}>Inscribe from Memory</Text>
+      <Text style={styles.subtitle}>Recite the verse entirely from your heart.</Text>
+
       <View style={styles.inscriptionContainer}>
         <Text style={styles.weaveQuote}>
-          {revealed === 0 ? <Text style={styles.cursorPulse}>|</Text> : words.slice(0, revealed).join(" ")}
-          {revealed > 0 && !complete && <Text style={styles.cursorPulse}> |</Text>}
+          {maskedTokens.map((token, idx) => {
+            if (!token.isMasked) {
+              return <Text key={token.id || idx}>{token.raw} </Text>;
+            }
+            if (token.isCorrect) {
+              return (
+                <Text key={token.id || idx} style={styles.masteredWord}>
+                  {token.raw}{' '}
+                </Text>
+              );
+            }
+            return (
+              <Text key={token.id || idx} style={styles.blankPrompt}>
+                {token.firstLetter || '_'}{'_'.repeat(Math.max(1, token.raw.length - 1))}{' '}
+              </Text>
+            );
+          })}
         </Text>
       </View>
-      
+
       <TextInput
         ref={inputRef}
         style={styles.hiddenInput}
@@ -406,26 +567,87 @@ function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, o
         value=""
       />
 
-      {complete ? (
+      {isComplete ? (
         <View style={styles.finishContainer}>
-          <View style={styles.finishStatus}>
-            <Check color={Palette.sage} size={20} />
-            <Text style={styles.statusCorrect}>{t('inscribe.isInscribed', { verse: 'John 3:16' })}</Text>
-          </View>
-          <SpringButton style={styles.button} onPress={onClose}>
-            <Text style={styles.buttonText}>{t('inscribe.finish')}</Text>
+          <SpringButton style={styles.button} onPress={onFinish}>
+            <Text style={styles.buttonText}>Complete & Record</Text>
+            <Sparkles size={18} color="#FFF" />
           </SpringButton>
-          <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]} onPress={onRestart}>
-            <Text style={styles.secondaryButtonText}>{t('inscribe.practiceAgain')}</Text>
-          </Pressable>
         </View>
       ) : (
-        <Pressable style={({ pressed }) => [styles.outlineButton, pressed && styles.pressed]} onPress={onFocus}>
-          <Text style={styles.outlineButtonText}>{t('inscribe.tapHere')}</Text>
-          <Text style={styles.countText}>{revealed}/{words.length}</Text>
-        </Pressable>
+        <View style={styles.actionsRow}>
+          <Pressable
+            style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]}
+            onPress={onHint}
+          >
+            <Lightbulb color={Palette.gold} size={20} />
+          </Pressable>
+          <SpringButton
+            style={styles.continueButton}
+            onPress={() => inputRef.current?.focus()}
+          >
+            <Text style={styles.buttonText}>Tap to Type ({solvedCount}/{totalBlanks})</Text>
+          </SpringButton>
+        </View>
       )}
-    </Pressable>
+    </View>
+  );
+}
+
+// Celebratory Drill Completion Summary
+function CompletionView({
+  score,
+  streak,
+  onFinish,
+  onPracticeAgain,
+}: {
+  score: DrillScoreResult | null;
+  streak: number;
+  onFinish: () => void;
+  onPracticeAgain: () => void;
+}) {
+  return (
+    <View style={styles.completionContainer}>
+      <DuoFlame streak={streak} state="COMPLETED_BOTH" size="large" />
+
+      <Text style={styles.completionTitle}>Verse Inscribed!</Text>
+      <Text style={styles.completionSubtitle}>
+        Your daily devotion is complete. Mutual fate covenant preserved!
+      </Text>
+
+      {/* Score Cards Breakdown */}
+      <View style={styles.scoreGrid}>
+        <View style={styles.scoreCard}>
+          <Text style={styles.scoreValue}>{score?.accuracy ?? 100}%</Text>
+          <Text style={styles.scoreLabel}>Accuracy</Text>
+        </View>
+
+        <View style={styles.scoreCard}>
+          <Text style={styles.scoreValue}>+{score?.xpEarned ?? 45}</Text>
+          <Text style={styles.scoreLabel}>XP Earned</Text>
+        </View>
+      </View>
+
+      {/* Speed Bonus Badge */}
+      {score?.speedBonus && (
+        <View style={styles.bonusBadge}>
+          <Zap size={14} color="#F59E0B" />
+          <Text style={styles.bonusText}>60-Second Speed Bonus (+5 XP)</Text>
+        </View>
+      )}
+
+      <SpringButton style={[styles.button, { marginTop: 24 }]} onPress={onFinish}>
+        <Text style={styles.buttonText}>Finish & Sync</Text>
+        <Check size={20} color="#FFF" />
+      </SpringButton>
+
+      <Pressable
+        style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+        onPress={onPracticeAgain}
+      >
+        <Text style={styles.secondaryButtonText}>Practice Again</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -439,7 +661,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   iconButton: {
     width: 44,
@@ -451,12 +673,12 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     alignItems: 'center',
   },
   progressDot: {
     height: 6,
-    width: 40,
+    width: 28,
     borderRadius: 3,
   },
   progressDotActive: {
@@ -465,12 +687,20 @@ const styles = StyleSheet.create({
   progressDotInactive: {
     backgroundColor: Palette.border,
   },
-  progressText: {
+  timerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  timerText: {
     fontFamily: Typography.sansBold,
-    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    fontSize: 11,
     color: Palette.primary,
-    width: 44,
-    textAlign: 'right',
   },
   scrollContent: {
     flexGrow: 1,
@@ -479,7 +709,7 @@ const styles = StyleSheet.create({
   levelContainer: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 30,
+    paddingTop: 16,
   },
   eyebrow: {
     fontFamily: Typography.sansBold,
@@ -490,19 +720,20 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: Typography.serifSemiBold,
-    fontSize: 34,
+    fontSize: 32,
     color: Palette.foreground,
-    marginTop: 12,
+    marginTop: 8,
   },
   subtitle: {
     fontFamily: Typography.sansMedium,
     fontSize: 14,
     color: Palette.mutedForeground,
-    marginTop: 8,
+    marginTop: 6,
+    textAlign: 'center',
   },
   cardContainer: {
     width: '100%',
-    paddingVertical: 50,
+    paddingVertical: 40,
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
@@ -512,8 +743,8 @@ const styles = StyleSheet.create({
   blobOne: {
     position: 'absolute',
     width: '90%',
-    height: 200,
-    borderRadius: 100,
+    height: 180,
+    borderRadius: 90,
     backgroundColor: Palette.secondary,
     opacity: 0.45,
     transform: [{ rotate: '-3deg' }],
@@ -522,9 +753,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 20,
     right: 30,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: Palette.gold,
     opacity: 0.15,
   },
@@ -540,38 +771,42 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
     color: Palette.primary,
     textTransform: 'uppercase',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   quote: {
     fontFamily: Typography.serifMedium,
-    fontSize: 32,
-    lineHeight: 40,
+    fontSize: 28,
+    lineHeight: 38,
     color: Palette.foreground,
     textAlign: 'center',
-    maxWidth: '90%',
+    maxWidth: '92%',
   },
   description: {
     fontFamily: Typography.sansMedium,
     fontSize: 14,
-    lineHeight: 24,
+    lineHeight: 22,
     color: Palette.mutedForeground,
     textAlign: 'center',
-    maxWidth: '80%',
+    maxWidth: '85%',
     marginBottom: 24,
   },
   button: {
     flexDirection: 'row',
-    height: 60,
+    height: 58,
     backgroundColor: Palette.primary,
-    borderRadius: 30,
+    borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    gap: 12,
+    gap: 10,
+    shadowColor: Palette.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   buttonText: {
     fontFamily: Typography.sansBold,
-    fontSize: 18,
+    fontSize: 17,
     color: '#fff',
   },
   pressed: {
@@ -582,60 +817,62 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 20,
-    paddingVertical: 20,
+    marginVertical: 16,
+    paddingVertical: 16,
     width: '100%',
   },
   weaveQuote: {
     fontFamily: Typography.serifMedium,
-    fontSize: 30,
-    lineHeight: 46,
+    fontSize: 28,
+    lineHeight: 44,
     color: Palette.foreground,
     textAlign: 'center',
   },
   blankText: {
     borderBottomWidth: 2,
-    minWidth: 80,
+    minWidth: 70,
     textAlign: 'center',
   },
   blankFilled: {
     borderColor: Palette.primary,
     color: Palette.primary,
-  },
-  blankWrong: {
-    borderColor: Palette.destructive,
-    color: Palette.destructive,
+    fontFamily: Typography.serifSemiBold,
   },
   blankEmpty: {
     borderColor: Palette.gold,
-    color: 'rgba(0,0,0,0)',
+    color: Palette.mutedForeground,
+    opacity: 0.6,
   },
   optionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 10,
-    marginTop: 20,
+    gap: 8,
+    marginTop: 16,
   },
   optionBadge: {
-    height: 48,
-    paddingHorizontal: 20,
-    borderRadius: 24,
+    height: 44,
+    paddingHorizontal: 16,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
   optionBadgeActive: {
     borderColor: Palette.border,
-    backgroundColor: Palette.background,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
   optionBadgeDisabled: {
     borderColor: Palette.border,
-    backgroundColor: Palette.secondary,
+    backgroundColor: 'rgba(0,0,0,0.04)',
   },
   optionText: {
     fontFamily: Typography.sansMedium,
-    fontSize: 16,
+    fontSize: 15,
     color: Palette.foreground,
   },
   optionTextDisabled: {
@@ -643,18 +880,13 @@ const styles = StyleSheet.create({
   },
   statusContainer: {
     minHeight: 24,
-    marginTop: 16,
+    marginTop: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  statusWrong: {
-    fontFamily: Typography.sansBold,
-    fontSize: 14,
-    color: Palette.destructive,
-  },
   statusCorrect: {
     fontFamily: Typography.sansBold,
-    fontSize: 14,
+    fontSize: 13,
     color: Palette.sage,
   },
   actionsRow: {
@@ -664,25 +896,25 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   resetButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: 'rgba(0,0,0,0.03)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   continueButton: {
     flex: 1,
-    height: 60,
-    borderRadius: 30,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: Palette.primary,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   disabledBtn: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
   hiddenInput: {
     position: 'absolute',
@@ -696,25 +928,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     width: '100%',
-    paddingTop: 40,
-    paddingBottom: 80,
+    paddingTop: 30,
+    paddingBottom: 60,
   },
-  cursorPulse: {
+  masteredWord: {
+    color: Palette.foreground,
+  },
+  blankPrompt: {
     color: Palette.gold,
+    letterSpacing: 1,
   },
   finishContainer: {
     width: '100%',
-    marginTop: 20,
-  },
-  finishStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 20,
+    marginTop: 16,
   },
   secondaryButton: {
-    height: 50,
+    height: 48,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -722,29 +951,67 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     fontFamily: Typography.sansMedium,
-    fontSize: 16,
-    color: Palette.foreground,
+    fontSize: 15,
+    color: Palette.mutedForeground,
   },
-  outlineButton: {
-    height: 60,
-    width: '100%',
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: Palette.gold,
-    flexDirection: 'row',
+  completionContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingVertical: 30,
   },
-  outlineButtonText: {
-    fontFamily: Typography.sansMedium,
-    fontSize: 16,
+  completionTitle: {
+    fontFamily: Typography.serifSemiBold,
+    fontSize: 32,
     color: Palette.foreground,
-    flex: 1,
+    marginTop: 18,
   },
-  countText: {
+  completionSubtitle: {
     fontFamily: Typography.sansMedium,
+    fontSize: 14,
+    color: Palette.mutedForeground,
+    textAlign: 'center',
+    maxWidth: '80%',
+    marginTop: 6,
+  },
+  scoreGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 24,
+    width: '100%',
+  },
+  scoreCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Palette.border,
+  },
+  scoreValue: {
+    fontFamily: Typography.sansBold,
+    fontVariant: ['tabular-nums'],
+    fontSize: 26,
+    color: Palette.primary,
+  },
+  scoreLabel: {
+    fontFamily: Typography.sans,
     fontSize: 12,
     color: Palette.mutedForeground,
+    marginTop: 4,
+  },
+  bonusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginTop: 14,
+  },
+  bonusText: {
+    fontFamily: Typography.sansBold,
+    fontSize: 11,
+    color: '#D97706',
   },
 });
