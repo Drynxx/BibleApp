@@ -21,6 +21,8 @@ import { useTranslation } from 'react-i18next';
 import { Palette, Typography } from '@/constants/theme';
 import { useAuth } from '../../src/services/authContext';
 import { useCovenant } from '../../src/services/covenantContext';
+import { useDailyPractice } from '../../src/hooks/useDailyPractice';
+import { useUserProgress } from '../../src/hooks/useUserProgress';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -29,10 +31,12 @@ export default function HomeScreen() {
   const [started, setStarted] = useState(false);
   const { profile, signOut } = useAuth();
   const { activeCovenant, myTodayReview } = useCovenant();
+  const { verse } = useDailyPractice();
+  const progress = useUserProgress();
   
   const displayName = profile?.displayName || 'Sarah';
-  const streak = activeCovenant?.shared_streak || 12;
-  const isDoneToday = !!myTodayReview && myTodayReview.status === 'completed';
+  const streak = progress.currentStreak;
+  const isDoneToday = progress.isDoneToday;
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -42,35 +46,16 @@ export default function HomeScreen() {
     }, [])
   );
 
-  const collections = [
-    {
-      title: t('collections.psalms'),
-      icon: Leaf,
-      toneBg: Palette.sageLight,
-      accentColor: Palette.sage,
-    },
-    {
-      title: t('collections.fruit'),
-      icon: 'fruit' as const,
-      toneBg: Palette.primaryLight,
-      accentColor: Palette.gold,
-    },
-    {
-      title: t('collections.proverbs'),
-      icon: Sun,
-      toneBg: Palette.goldLight,
-      accentColor: Palette.gold,
-    },
-  ];
+  const collections = progress.savedCollections;
 
   const week = [
-    { day: t('progress.mon'), done: true },
-    { day: t('progress.tue'), done: true },
-    { day: t('progress.wed'), done: true },
-    { day: t('progress.thu'), done: true },
-    { day: t('progress.fri'), done: true },
-    { day: t('progress.sat'), done: true },
-    { day: t('progress.sun'), done: false },
+    { day: t('progress.mon'), done: progress.activityMap[0] === 1 },
+    { day: t('progress.tue'), done: progress.activityMap[1] === 1 },
+    { day: t('progress.wed'), done: progress.activityMap[2] === 1 },
+    { day: t('progress.thu'), done: progress.activityMap[3] === 1 },
+    { day: t('progress.fri'), done: progress.activityMap[4] === 1 },
+    { day: t('progress.sat'), done: progress.activityMap[5] === 1 },
+    { day: t('progress.sun'), done: progress.activityMap[6] === 1 },
   ];
 
   return (
@@ -143,11 +128,11 @@ export default function HomeScreen() {
         <View style={styles.verseBlobTwo} />
 
         <View style={styles.verseBadge}>
-          <Text style={styles.verseBadgeText}>JOHN 3:16</Text>
+          <Text style={styles.verseBadgeText}>{verse.reference.toUpperCase()}</Text>
         </View>
 
         <Text style={styles.verseQuote}>
-          {t('home.verseQuote')}
+          {verse.text}
         </Text>
 
         <Text style={styles.verseFootnote}>{t('home.loveChanges')}</Text>
@@ -189,32 +174,26 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.collectionsGrid}>
-          {collections.map((item) => {
-            const Icon = item.icon;
+          {collections.map((item, index) => {
+            // Using a simple deterministic tone logic since icons were removed from the model for simplicity
+            const toneBg = index % 2 === 0 ? Palette.sageLight : Palette.primaryLight;
+            const accentColor = index % 2 === 0 ? Palette.sage : Palette.primary;
             return (
               <Pressable
-                key={item.title}
+                key={item.id}
                 style={({ pressed }) => [
                   styles.collectionCard,
-                  { backgroundColor: item.toneBg },
+                  { backgroundColor: toneBg },
                   pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] },
                 ]}
                 onPress={() => router.push('/verse')}
               >
                 <View style={styles.collectionIconContainer}>
-                  {Icon === 'fruit' ? (
-                    <View style={styles.fruitIconWrapper}>
-                      <View style={[styles.fruitDot, { backgroundColor: Palette.primary, bottom: 2, left: 2 }]} />
-                      <View style={[styles.fruitDot, { backgroundColor: Palette.gold, top: 4, right: 4 }]} />
-                      <Leaf color={Palette.sage} size={18} style={{ transform: [{ rotate: '45deg' }] }} />
-                    </View>
-                  ) : (
-                    <Icon color={item.accentColor} size={30} strokeWidth={1.7} />
-                  )}
+                  <Leaf color={accentColor} size={30} strokeWidth={1.7} />
                 </View>
 
                 <Text style={styles.collectionTitle}>{item.title}</Text>
-                <Text style={styles.collectionCount}>{t('home.sevenVerses')}</Text>
+                <Text style={styles.collectionCount}>{item.count} Verses</Text>
               </Pressable>
             );
           })}

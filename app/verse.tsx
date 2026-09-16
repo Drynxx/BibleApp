@@ -18,8 +18,8 @@ import Svg, { Circle } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 
 import { Palette, Typography } from '@/constants/theme';
+import { useDailyPractice } from '../src/hooks/useDailyPractice';
 
-const PROGRESS = 60;
 const R = 42;
 const C = 2 * Math.PI * R;
 
@@ -27,14 +27,15 @@ export default function VerseDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
+  const { verse, masteryPercentage } = useDailyPractice();
   const [animatedProgress, setAnimatedProgress] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setAnimatedProgress(PROGRESS);
+      setAnimatedProgress(masteryPercentage);
     }, 150);
     return () => clearTimeout(timer);
-  }, []);
+  }, [masteryPercentage]);
 
   const strokeDashoffset = C - (C * animatedProgress) / 100;
 
@@ -70,7 +71,7 @@ export default function VerseDetailScreen() {
       {/* Reference Tags */}
       <View style={styles.tagRow}>
         <View style={styles.goldBadge}>
-          <Text style={styles.goldBadgeText}>JOHN 3:16</Text>
+          <Text style={styles.goldBadgeText}>{verse.reference.toUpperCase()}</Text>
         </View>
         <View style={styles.tagDivider} />
         <Text style={styles.translationText}>{t('verse.translation')}</Text>
@@ -78,8 +79,7 @@ export default function VerseDetailScreen() {
 
       {/* Verse Scripture Text */}
       <Text style={styles.verseScripture}>
-        For God so loved the world that he gave his one and only Son, that whoever believes in him shall
-        not perish but have eternal life.
+        {verse.text}
       </Text>
 
       {/* Memorization Progress Card */}
@@ -108,14 +108,14 @@ export default function VerseDetailScreen() {
             />
           </Svg>
           <View style={styles.ringCenterText}>
-            <Text style={styles.ringPercentageText}>{PROGRESS}%</Text>
+            <Text style={styles.ringPercentageText}>{masteryPercentage}%</Text>
           </View>
         </View>
 
         <View style={styles.cardDivider} />
 
         <View style={styles.progressInfo}>
-          <Text style={styles.progressLabel}>{PROGRESS}% {t('verse.memorized')}</Text>
+          <Text style={styles.progressLabel}>{masteryPercentage}% {t('verse.memorized')}</Text>
           <Text style={styles.progressSub}>{t('verse.keepGoing')}</Text>
         </View>
       </View>

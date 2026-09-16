@@ -16,6 +16,7 @@ import {
   ChevronRight,
   BookOpen
 } from 'lucide-react-native';
+import { useProfileLibrary } from '../../src/hooks/useProfileLibrary';
 
 type LibraryView = "saved" | "packs" | "reflections";
 
@@ -23,55 +24,6 @@ const libraryTabs: Array<{ value: LibraryView; label: string }> = [
   { value: "saved", label: "Saved verses" },
   { value: "packs", label: "My packs" },
   { value: "reflections", label: "Reflections" },
-];
-
-const savedVerses = [
-  {
-    reference: "Psalm 23:1",
-    translation: "NIV",
-    saved: "Saved Mar 12",
-    text: "The Lord is my shepherd, I lack nothing. He makes me lie down in green pastures, he leads me beside quiet waters.",
-  },
-  {
-    reference: "Isaiah 41:10",
-    translation: "NIV",
-    saved: "Saved Mar 8",
-    text: "So do not fear, for I am with you; do not be dismayed, for I am your God. I will strengthen you and help you.",
-  },
-  {
-    reference: "Matthew 11:28",
-    translation: "NIV",
-    saved: "Saved Feb 27",
-    text: "Come to me, all you who are weary and burdened, and I will give you rest.",
-  },
-];
-
-const customPacks = [
-  {
-    name: "Verses for my family",
-    count: 5,
-    description: "Promises and prayers to return to together.",
-    image: require('@/assets/images/plans/plan-anxiety.jpg'),
-  },
-  {
-    name: "Sunday school",
-    count: 8,
-    description: "A growing collection for weekly teaching.",
-    image: require('@/assets/images/plans/plan-grief.jpg'),
-  },
-];
-
-const reflections = [
-  {
-    reference: "John 3:16",
-    date: "Mar 9",
-    note: "Sat with the word “gave” today. Love that costs something — a gift before it is a rule. I want to carry that generosity into this week.",
-  },
-  {
-    reference: "Psalm 34:18",
-    date: "Mar 4",
-    note: "Close to the brokenhearted. He is nearer in the hard weeks, not farther. This verse felt less like an answer and more like companionship.",
-  },
 ];
 
 function LibraryHeading({ eyebrow, title, count, icon: Icon }: { eyebrow: string; title: string; count: string; icon: any }) {
@@ -102,6 +54,8 @@ function EmptyState({ icon: Icon, title, copy }: { icon: any; title: string; cop
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { savedVerses, customPacks, reflections } = useProfileLibrary();
+
   const [activeView, setActiveView] = useState<LibraryView>("saved");
   const [visibleVerses, setVisibleVerses] = useState(savedVerses);
 
@@ -180,14 +134,13 @@ export default function ProfileScreen() {
                           <View>
                             <View style={styles.privateLabelBox}>
                               <LockKeyhole color={Palette.mutedForeground} size={12} />
-                              <Text style={styles.privateLabel}>Private · {verse.translation}</Text>
+                              <Text style={styles.privateLabel}>Private</Text>
                             </View>
                             <Text style={styles.verseReference}>{verse.reference}</Text>
                           </View>
-                          <Text style={styles.savedDate}>{verse.saved}</Text>
                         </View>
                         <View style={styles.blockquote}>
-                          <Text style={styles.blockquoteText}>“{verse.text}”</Text>
+                          <Text style={styles.blockquoteText}>“{verse.snippet}”</Text>
                         </View>
                       </View>
                       <View style={styles.verseCardFooter}>
@@ -216,15 +169,14 @@ export default function ProfileScreen() {
               <LibraryHeading eyebrow="Collections" title="My packs" count={`${customPacks.length} collections`} icon={FolderHeart} />
               <View style={styles.versesList}>
                 {customPacks.map((pack) => (
-                  <Pressable key={pack.name} style={styles.packCard}>
+                  <Pressable key={pack.title} style={styles.packCard}>
                     <ImageBackground source={pack.image} style={styles.packImage}>
                       <View style={styles.packImageGradient} />
                     </ImageBackground>
                     <View style={styles.packContent}>
                       <View style={styles.packTextContainer}>
-                        <Text style={styles.packEyebrow}>Personal pack · {pack.count} verses</Text>
-                        <Text style={styles.packTitle}>{pack.name}</Text>
-                        <Text style={styles.packDescription}>{pack.description}</Text>
+                        <Text style={styles.packEyebrow}>Personal pack · {pack.verses} verses</Text>
+                        <Text style={styles.packTitle}>{pack.title}</Text>
                       </View>
                       <ChevronRight color={Palette.mutedForeground} size={20} />
                     </View>
@@ -243,19 +195,19 @@ export default function ProfileScreen() {
               <LibraryHeading eyebrow="Private notes" title="Reflections" count={`${reflections.length} entries`} icon={Feather} />
               <View style={styles.versesList}>
                 {reflections.map((entry) => (
-                  <View key={entry.reference} style={styles.reflectionCard}>
+                  <View key={entry.id} style={styles.reflectionCard}>
                     <View style={styles.reflectionTop}>
                       <View>
                         <View style={styles.privateLabelBox}>
                           <LockKeyhole color={Palette.mutedForeground} size={12} />
                           <Text style={styles.privateLabel}>Private reflection</Text>
                         </View>
-                        <Text style={styles.reflectionReference}>{entry.reference}</Text>
+                        <Text style={styles.reflectionReference}>{entry.title}</Text>
                       </View>
                       <Text style={styles.reflectionDate}>{entry.date}</Text>
                     </View>
                     <View style={styles.reflectionQuote}>
-                      <Text style={styles.reflectionNote}>{entry.note}</Text>
+                      <Text style={styles.reflectionNote}>{entry.snippet}</Text>
                     </View>
                   </View>
                 ))}
@@ -278,7 +230,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 28,
     marginBottom: 24,
@@ -313,7 +265,6 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.card,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

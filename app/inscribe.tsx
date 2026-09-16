@@ -40,6 +40,7 @@ import { useCovenant } from '../src/services/covenantContext';
 import { BottomSheetMenu } from '../src/components/BottomSheetMenu';
 import { BlankingStage, DrillScoreResult } from '../src/engine/blanking';
 import { DuoFlame } from '../src/components/streak/DuoFlame';
+import { useDailyPractice } from '../src/hooks/useDailyPractice';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -133,12 +134,10 @@ export default function InscribeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { completeDailyReview, activeCovenant } = useCovenant();
+  const { verse } = useDailyPractice();
 
-  const verseText = t(
-    'inscribe.verseText',
-    'Să nu te părăsească bunătatea și credincioșia: leagă-le la gât, scrie-le pe tăblița inimii tale!'
-  );
-  const verseRef = t('inscribe.verseRef', 'Proverbe 3:3');
+  const verseText = verse.text;
+  const verseRef = verse.reference;
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [drillCompleted, setDrillCompleted] = useState(false);

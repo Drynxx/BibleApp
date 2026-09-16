@@ -27,22 +27,17 @@ import { Palette, Typography } from '@/constants/theme';
 import { useCovenant } from '../../src/services/covenantContext';
 import { BottomSheetMenu } from '../../src/components/BottomSheetMenu';
 import { DuoDashboardCard } from '../../src/components/streak/DuoDashboardCard';
+import { useUserProgress } from '../../src/hooks/useUserProgress';
 
 const months = ['October 2024', 'November 2024', 'December 2024'];
 const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const activity = [
-  0, 1, 1, 1, 1, 1, 0,
-  1, 1, 1, 0, 0, 1, 1,
-  1, 1, 1, 1, 1, 1, 1,
-  1, 0, 0, 1, 1, 0, 0,
-  0, 0, 1, 0, 0, 1, 0,
-];
 
 export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
   const [menuVisible, setMenuVisible] = useState(false);
+  const progress = useUserProgress();
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -104,12 +99,6 @@ export default function ProgressScreen() {
       iconColor: Palette.gold,
     },
   ];
-
-  const mastered = [
-    t('progress.mastered_philippians'),
-    t('progress.mastered_psalm'),
-    t('progress.mastered_jeremiah')
-  ];
   const [monthIndex, setMonthIndex] = useState(1);
   const months = [
     t('progress.october'),
@@ -163,7 +152,7 @@ export default function ProgressScreen() {
 
       {/* Hero Stats */}
       <View style={styles.heroSection}>
-        <Text style={styles.heroNumber}>47</Text>
+        <Text style={styles.heroNumber}>{progress.versesMasteredCount}</Text>
         <Text style={styles.heroLabel}>{t('progress.versesMemorized')}</Text>
         <Text style={styles.heroCaption}>{t('progress.caption')}</Text>
 
@@ -226,7 +215,7 @@ export default function ProgressScreen() {
             </View>
 
             <View style={styles.dotsGrid}>
-              {activity.map((active, idx) => (
+              {progress.activityMap.map((active, idx) => (
                 <View key={idx} style={styles.dotCell}>
                   <View
                     style={[
@@ -241,12 +230,12 @@ export default function ProgressScreen() {
 
           {/* Vertical divider and side stats */}
           <View style={styles.sideStats}>
-            <Text style={styles.sideStatNumber}>18</Text>
+            <Text style={styles.sideStatNumber}>{progress.practiceDaysThisMonth}</Text>
             <Text style={styles.sideStatLabel}>{t('progress.daysMonth')}</Text>
 
             <View style={styles.goldLine} />
 
-            <Text style={styles.sideStatNumber}>5</Text>
+            <Text style={styles.sideStatNumber}>{progress.currentStreak}</Text>
             <Text style={styles.sideStatLabel}>{t('progress.dayStreak')}</Text>
 
             <View style={styles.goldLine} />
@@ -292,12 +281,12 @@ export default function ProgressScreen() {
         </View>
 
         <View style={styles.masteredList}>
-          {mastered.map((verse, index) => (
+          {progress.masteredVerses.map((verse, index) => (
             <Pressable
               key={verse}
               style={({ pressed }) => [
                 styles.masteredRow,
-                index < mastered.length - 1 && styles.rowBorder,
+                index < progress.masteredVerses.length - 1 && styles.rowBorder,
                 pressed && styles.pressed,
               ]}
               onPress={() => router.push('/verse')}

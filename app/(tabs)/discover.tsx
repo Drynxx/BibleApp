@@ -7,18 +7,13 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Palette, Typography } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { BottomSheet } from '../../src/components/BottomSheet';
+import { useDiscover } from '../../src/hooks/useDiscover';
+import { useDailyPractice } from '../../src/hooks/useDailyPractice';
 
 const angerImage = require('../../assets/images/plans/plan-anger.jpg');
 const anxietyImage = require('../../assets/images/plans/plan-anxiety.jpg');
 const directionImage = require('../../assets/images/plans/plan-direction.jpg');
 const griefImage = require('../../assets/images/plans/plan-grief.jpg');
-
-const getPacks = (t: any) => [
-  { title: t('discover.plansList.anxiety.title'), category: t('discover.topics.Peace'), count: 7, description: t('discover.plansList.anxiety.description'), verses: 'Philippians 4:6–7 · Matthew 6:34 · Psalm 56:3', image: anxietyImage },
-  { title: t('discover.plansList.grief.title'), category: t('discover.topics.Comfort'), count: 9, description: t('discover.plansList.grief.description'), verses: 'Psalm 34:18 · Revelation 21:4 · John 11:25', image: griefImage },
-  { title: t('discover.plansList.direction.title'), category: t('discover.topics.Guidance'), count: 6, description: t('discover.plansList.direction.description'), verses: 'Proverbs 3:5–6 · Psalm 32:8 · Isaiah 30:21', image: directionImage },
-  { title: t('discover.plansList.anger.title'), category: t('discover.topics.Growth'), count: 8, description: t('discover.plansList.anger.description'), verses: 'James 1:19–20 · Proverbs 15:1 · Ephesians 4:26', image: angerImage },
-];
 
 const topics = ['All', 'Peace', 'Comfort', 'Guidance', 'Growth'];
 const tabsArray = ['Plans', 'Books', 'Verses'];
@@ -26,15 +21,6 @@ const tabsArray = ['Plans', 'Books', 'Verses'];
 const recentBooks = ['Psalms', 'John', 'Romans'];
 const oldTestament = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy', 'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel', '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs', 'Ecclesiastes', 'Song of Solomon', 'Isaiah', 'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi'];
 const newTestament = ['Matthew', 'Mark', 'Luke', 'John', 'Acts', 'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus', 'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John', 'Jude', 'Revelation'];
-
-const getVerseLibrary = (t: any) => [
-  { reference: t('discover.bibleBooks.John') + ' 3:16', translation: t('verse.translation'), text: t('discover.verseLibrary.john316.text'), topic: t('discover.verseLibrary.john316.topic'), group: 'For today', tags: 'love salvation John' },
-  { reference: t('discover.bibleBooks.Philippians') + ' 4:6–7', translation: t('verse.translation'), text: t('discover.verseLibrary.phil46.text'), topic: t('discover.verseLibrary.phil46.topic'), group: 'For today', tags: 'anxiety peace prayer Philippians' },
-  { reference: t('discover.bibleBooks.Psalms') + ' 34:18', translation: t('verse.translation'), text: t('discover.verseLibrary.psalm34.text'), topic: t('discover.verseLibrary.psalm34.topic'), group: 'Popular', tags: 'grief comfort Psalms' },
-  { reference: t('discover.bibleBooks.Proverbs') + ' 3:5–6', translation: t('verse.translation'), text: t('discover.verseLibrary.prov35.text'), topic: t('discover.verseLibrary.prov35.topic'), group: 'Popular', tags: 'direction wisdom trust Proverbs' },
-  { reference: t('discover.bibleBooks.James') + ' 1:19–20', translation: t('verse.translation'), text: t('discover.verseLibrary.james119.text'), topic: t('discover.verseLibrary.james119.topic'), group: 'Popular', tags: 'anger patience James' },
-  { reference: t('discover.bibleBooks.Romans') + ' 8:28', translation: t('verse.translation'), text: t('discover.verseLibrary.rom828.text'), topic: t('discover.verseLibrary.rom828.topic'), group: 'For today', tags: 'hope purpose Romans' },
-];
 
 export default function DiscoverScreen() {
   const { t } = useTranslation();
@@ -53,12 +39,13 @@ export default function DiscoverScreen() {
   const [activeTab, setActiveTab] = useState('Plans');
   const [activeTopic, setActiveTopic] = useState('All');
   const [preview, setPreview] = useState<any>(null);
-  const [queuedItem, setQueuedItem] = useState('John 3:16');
   const [queued, setQueued] = useState(false);
   const [queueExpanded, setQueueExpanded] = useState(false);
 
-  const packs = useMemo(() => getPacks(t), [t]);
-  const verseLibrary = useMemo(() => getVerseLibrary(t), [t]);
+  const { packs, library: verseLibrary } = useDiscover();
+  const { verse: practiceVerse } = useDailyPractice();
+  
+  const [queuedItem, setQueuedItem] = useState(practiceVerse.reference);
 
   const searchResults = useMemo(() => {
     const normalized = query.trim().toLowerCase();
