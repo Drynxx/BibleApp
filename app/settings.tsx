@@ -410,10 +410,7 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.card,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
     elevation: 2,
   },
   backButtonPressed: {
@@ -450,10 +447,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(231, 222, 206, 0.55)', // border/55
-    shadowColor: Palette.foreground,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
     elevation: 2,
     overflow: 'hidden',
   },
@@ -519,10 +513,7 @@ const styles = StyleSheet.create({
   },
   segmentedButtonActive: {
     backgroundColor: Palette.primary,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
     elevation: 1,
   },
   segmentedText: {
@@ -562,10 +553,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
     elevation: 2,
   }
 });

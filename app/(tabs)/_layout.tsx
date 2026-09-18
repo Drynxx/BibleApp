@@ -17,10 +17,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }: any) {
       height: 76,
       borderRadius: 38,
       elevation: 12,
-      shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.12,
-      shadowRadius: 16,
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
     }}>
       <BlurView
         intensity={100}

@@ -33,6 +33,7 @@ import Animated, {
 import { Palette, Typography } from '@/constants/theme';
 import { validateWord, normalizeDiacritics } from '../src/engine/blanking';
 import { BottomSheetMenu } from '../src/components/BottomSheetMenu';
+import { useDailyPractice } from '../src/hooks/useDailyPractice';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -125,13 +126,14 @@ export default function InscribeScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { currentSession } = useDailyPractice();
   
-  const verseText = t('inscribe.verseText');
+  const verseText = currentSession.verse.text;
   const words = verseText.split(" ");
   const hiddenIndexes = t('inscribe.hiddenIndexes', { returnObjects: true }) as number[];
   const answers = hiddenIndexes.map((index) => words[index] ?? "");
   const options = t('inscribe.options', { returnObjects: true }) as string[];
-  const verseRef = t('inscribe.verseRef');
+  const verseRef = currentSession.verse.reference;
   
   const [level, setLevel] = useState(1);
   const [picked, setPicked] = useState<string[]>([]);

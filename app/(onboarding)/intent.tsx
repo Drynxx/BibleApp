@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -33,17 +33,17 @@ export default function IntentScreen() {
       <View style={styles.optionsContainer}>
         {OPTIONS.map((option, index) => (
           <Animated.View key={option.id} entering={FadeIn.duration(600)}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.optionCard,
-                pressed && { opacity: 0.7 },
-              ]}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.optionCard}
               onPress={() => handleSelect(option.id)}
             >
-              <Text style={styles.optionText}>
-                {i18n.language === 'en' ? option.en : option.ro}
-              </Text>
-            </Pressable>
+              <View style={styles.textContainer}>
+                <Text style={styles.optionText}>
+                  {i18n.language === 'en' ? option.en : option.ro}
+                </Text>
+              </View>
+            </TouchableOpacity>
           </Animated.View>
         ))}
       </View>
@@ -76,6 +76,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(231, 222, 206, 0.6)',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   optionText: {
     fontFamily: Typography.sansMedium,

@@ -18,8 +18,8 @@ import Svg, { Circle } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 
 import { Palette, Typography } from '@/constants/theme';
+import { useDailyPractice } from '../src/hooks/useDailyPractice';
 
-const PROGRESS = 60;
 const R = 42;
 const C = 2 * Math.PI * R;
 
@@ -27,14 +27,17 @@ export default function VerseDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
+  const { currentSession } = useDailyPractice();
+  const targetProgress = currentSession.masteryPercentage;
+  const verse = currentSession.verse;
   const [animatedProgress, setAnimatedProgress] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setAnimatedProgress(PROGRESS);
+      setAnimatedProgress(targetProgress);
     }, 150);
     return () => clearTimeout(timer);
-  }, []);
+  }, [targetProgress]);
 
   const strokeDashoffset = C - (C * animatedProgress) / 100;
 
@@ -70,16 +73,15 @@ export default function VerseDetailScreen() {
       {/* Reference Tags */}
       <View style={styles.tagRow}>
         <View style={styles.goldBadge}>
-          <Text style={styles.goldBadgeText}>JOHN 3:16</Text>
+          <Text style={styles.goldBadgeText}>{verse.reference.toUpperCase()}</Text>
         </View>
         <View style={styles.tagDivider} />
-        <Text style={styles.translationText}>{t('verse.translation')}</Text>
+        <Text style={styles.translationText}>{verse.translation}</Text>
       </View>
 
       {/* Verse Scripture Text */}
       <Text style={styles.verseScripture}>
-        For God so loved the world that he gave his one and only Son, that whoever believes in him shall
-        not perish but have eternal life.
+        {verse.text}
       </Text>
 
       {/* Memorization Progress Card */}
@@ -108,14 +110,14 @@ export default function VerseDetailScreen() {
             />
           </Svg>
           <View style={styles.ringCenterText}>
-            <Text style={styles.ringPercentageText}>{PROGRESS}%</Text>
+            <Text style={styles.ringPercentageText}>{targetProgress}%</Text>
           </View>
         </View>
 
         <View style={styles.cardDivider} />
 
         <View style={styles.progressInfo}>
-          <Text style={styles.progressLabel}>{PROGRESS}% {t('verse.memorized')}</Text>
+          <Text style={styles.progressLabel}>{targetProgress}% {t('verse.memorized')}</Text>
           <Text style={styles.progressSub}>{t('verse.keepGoing')}</Text>
         </View>
       </View>
@@ -138,7 +140,7 @@ export default function VerseDetailScreen() {
           styles.ctaButton,
           pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] },
         ]}
-        onPress={() => router.push('/practice')}
+        onPress={() => router.push('/inscribe')}
       >
         <Text style={styles.ctaText}>{t('verse.continue')}</Text>
         <ArrowRight color="#FFFFFF" size={20} strokeWidth={2} style={styles.ctaArrow} />
@@ -221,10 +223,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Palette.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   ringWrapper: {
@@ -312,10 +311,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    shadowColor: Palette.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.3)',
     elevation: 3,
   },
   ctaText: {

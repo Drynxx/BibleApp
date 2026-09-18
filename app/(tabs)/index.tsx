@@ -21,6 +21,8 @@ import { useTranslation } from 'react-i18next';
 import { Palette, Typography } from '@/constants/theme';
 import { useAuth } from '../../src/services/authContext';
 import { useCovenant } from '../../src/services/covenantContext';
+import { useDailyPractice } from '../../src/hooks/useDailyPractice';
+import { useUserProgress } from '../../src/hooks/useUserProgress';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -30,9 +32,12 @@ export default function HomeScreen() {
   const { profile, signOut } = useAuth();
   const { activeCovenant, myTodayReview } = useCovenant();
   
+  const { currentSession } = useDailyPractice();
+  const progress = useUserProgress();
+  
   const displayName = profile?.displayName || 'Sarah';
-  const streak = activeCovenant?.shared_streak || 12;
-  const isDoneToday = !!myTodayReview && myTodayReview.status === 'completed';
+  const streak = progress.currentStreak;
+  const isDoneToday = progress.isDoneToday;
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -43,24 +48,9 @@ export default function HomeScreen() {
   );
 
   const collections = [
-    {
-      title: t('collections.psalms'),
-      icon: Leaf,
-      toneBg: Palette.sageLight,
-      accentColor: Palette.sage,
-    },
-    {
-      title: t('collections.fruit'),
-      icon: 'fruit' as const,
-      toneBg: Palette.primaryLight,
-      accentColor: Palette.gold,
-    },
-    {
-      title: t('collections.proverbs'),
-      icon: Sun,
-      toneBg: Palette.goldLight,
-      accentColor: Palette.gold,
-    },
+    { ...progress.savedCollections[0], icon: Leaf, toneBg: Palette.sageLight, accentColor: Palette.sage },
+    { ...progress.savedCollections[1], icon: 'fruit' as const, toneBg: Palette.primaryLight, accentColor: Palette.gold },
+    { ...progress.savedCollections[2], icon: Sun, toneBg: Palette.goldLight, accentColor: Palette.gold },
   ];
 
   const week = [
@@ -143,11 +133,11 @@ export default function HomeScreen() {
         <View style={styles.verseBlobTwo} />
 
         <View style={styles.verseBadge}>
-          <Text style={styles.verseBadgeText}>JOHN 3:16</Text>
+          <Text style={styles.verseBadgeText}>{currentSession.verse.reference.toUpperCase()}</Text>
         </View>
 
         <Text style={styles.verseQuote}>
-          {t('home.verseQuote')}
+          "{currentSession.verse.text}"
         </Text>
 
         <Text style={styles.verseFootnote}>{t('home.loveChanges')}</Text>
@@ -214,7 +204,7 @@ export default function HomeScreen() {
                 </View>
 
                 <Text style={styles.collectionTitle}>{item.title}</Text>
-                <Text style={styles.collectionCount}>{t('home.sevenVerses')}</Text>
+                <Text style={styles.collectionCount}>{item.count} Verses</Text>
               </Pressable>
             );
           })}
@@ -299,10 +289,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1,
     borderColor: Palette.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   streakCardHeader: {
@@ -376,10 +363,7 @@ const styles = StyleSheet.create({
     borderColor: Palette.border,
     overflow: 'hidden',
     position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
     elevation: 2,
   },
   verseBlobOne: {
@@ -438,10 +422,7 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Palette.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 12px rgba(212, 175, 55, 0.3)',
     elevation: 3,
   },
   ctaContent: {

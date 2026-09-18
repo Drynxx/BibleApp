@@ -10,13 +10,13 @@ export function BottomSheet({ visible, onClose, children }: { visible: boolean, 
     if (visible) {
       setShow(true);
       Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
-        Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 11, useNativeDriver: true })
+        Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: false }),
+        Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 11, useNativeDriver: false })
       ]).start();
     } else {
       Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: Dimensions.get('window').height, duration: 250, useNativeDriver: true })
+        Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: false }),
+        Animated.timing(slideAnim, { toValue: Dimensions.get('window').height, duration: 250, useNativeDriver: false })
       ]).start(() => setShow(false));
     }
   }, [visible]);
@@ -28,11 +28,11 @@ export function BottomSheet({ visible, onClose, children }: { visible: boolean, 
       onPanResponderMove: (_, g) => {
         if (g.dy > 0) slideAnim.setValue(g.dy);
       },
-      onPanResponderRelease: (_, g) => {
-        if (g.dy > 120 || g.vy > 1.2) {
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 100) {
           onClose();
         } else {
-          Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 11, useNativeDriver: true }).start();
+          Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 11, useNativeDriver: false }).start();
         }
       }
     })
