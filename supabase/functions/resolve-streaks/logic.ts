@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   getLocalHour,
+  getLocalDateString,
   getYesterdayDateString,
   normalizeTimezone,
 } from "../_shared/timezone";
@@ -104,12 +105,17 @@ export async function processMidnightStreakResolution(
 
     const hour1 = getLocalHour(tz1, refDate);
     const hour2 = getLocalHour(tz2, refDate);
+    const date1 = getLocalDateString(tz1, refDate);
+    const date2 = getLocalDateString(tz2, refDate);
 
-    // Day ends at midnight (hour === 0) in the covenant's operational timezone
-    // If either partner's clock is 0:00, check if yesterday's cutoff needs resolution
-    const isMidnightHour = hour1 === 0 || hour2 === 0;
+    // Day ends at midnight (hour === 0) in the covenant's operational timezone.
+    // In multi-timezone pairs, resolve when both partners have concluded the calendar day
+    // (date1 === date2) and at least one is currently at hour 0, using the midnight timezone.
+    const bothInNewDay = date1 === date2;
+    const isU1Midnight = hour1 === 0 && bothInNewDay;
+    const isU2Midnight = hour2 === 0 && bothInNewDay;
 
-    if (!isMidnightHour) {
+    if (!isU1Midnight && !isU2Midnight) {
       result.details.push({
         covenantId: cov.id,
         outcome: "not_midnight",
@@ -119,10 +125,11 @@ export async function processMidnightStreakResolution(
       continue;
     }
 
-    const yesterdayDate = getYesterdayDateString(tz1, refDate);
+    const midnightTz = isU1Midnight ? tz1 : tz2;
+    const yesterdayDate = getYesterdayDateString(midnightTz, refDate);
 
     // Check if already resolved for yesterday
-    if (cov.last_streak_date === yesterdayDate) {
+    if (cov.last_streak_date && cov.last_streak_date >= yesterdayDate) {
       result.details.push({
         covenantId: cov.id,
         outcome: "already_resolved",
@@ -199,9 +206,31 @@ export async function processMidnightStreakResolution(
         (u1.streak_freezes_available || 0) +
         (u2.streak_freezes_available || 0);
 
-      if (totalFreezesAvailable > 0) {
+      if (cov.shared_streak > 0 && totalFreezesAvailable > 0) {
         // Sub-case A: Streak Freeze saves the streak!
-        const remainingCovenantFreezes = Math.max(0, (cov.freeze_reserves || 0) - 1);
+        let remainingCovenantFreezes = cov.freeze_reserves || 0;
+        let u1Freezes = u1.streak_freezes_available || 0;
+        let u2Freezes = u2.streak_freezes_available || 0;
+
+        if (remainingCovenantFreezes > 0) {
+          remainingCovenantFreezes -= 1;
+        } else if (u1Freezes > 0) {
+          u1Freezes -= 1;
+          if (!dryRun) {
+            await supabase
+              .from("profiles")
+              .update({ streak_freezes_available: u1Freezes, updated_at: new Date().toISOString() })
+              .eq("id", u1.id);
+          }
+        } else if (u2Freezes > 0) {
+          u2Freezes -= 1;
+          if (!dryRun) {
+            await supabase
+              .from("profiles")
+              .update({ streak_freezes_available: u2Freezes, updated_at: new Date().toISOString() })
+              .eq("id", u2.id);
+          }
+        }
 
         if (!dryRun) {
           // Decrement covenant freeze reserve
