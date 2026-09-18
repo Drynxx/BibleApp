@@ -6,6 +6,7 @@
 -- 1. Enable UUID Extension & Cron
 create extension if not exists "uuid-ossp";
 create extension if not exists "pg_cron";
+create extension if not exists "pg_net";
 
 -- 2. User Profiles Table (Linked to Supabase Auth)
 create table if not exists public.profiles (
@@ -252,6 +253,12 @@ create policy "Users can view own notification logs"
   to authenticated
   using (auth.uid() = recipient_id);
 
+create policy "Users can update own notification logs"
+  on public.notification_logs for update
+  to authenticated
+  using (auth.uid() = recipient_id)
+  with check (auth.uid() = recipient_id);
+
 -- 9. Stored Procedures / RPCs
 create or replace function public.register_device_token(
   p_token text,
@@ -383,6 +390,113 @@ begin
 end;
 $$ language plpgsql security definer;
 
+-- Stored Procedure: Join Covenant by Invite Code
+create or replace function public.join_covenant_by_code(
+  p_invite_code text
+)
+returns json as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_target_covenant public.covenants%rowtype;
+begin
+  if v_user_id is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  select * into v_target_covenant
+  from public.covenants
+  where invite_code = p_invite_code
+    and user_2_id is null
+    and status = 'pending';
+
+  if not found then
+    raise exception 'Invalid invite code or covenant is already full';
+  end if;
+
+  if v_target_covenant.user_1_id = v_user_id then
+    raise exception 'Cannot join your own covenant';
+  end if;
+
+  update public.covenants
+  set
+    user_2_id = v_user_id,
+    status = 'active',
+    last_synced_at = now(),
+    updated_at = now()
+  where id = v_target_covenant.id;
+
+  return json_build_object(
+    'success', true,
+    'covenant_id', v_target_covenant.id,
+    'status', 'active'
+  );
+end;
+$$ language plpgsql security definer;
+
 -- 10. Realtime Publications (Enables WebSocket Live Sync on Mobile)
 alter publication supabase_realtime add table public.covenant_daily_reviews;
 alter publication supabase_realtime add table public.covenants;
+
+-- 11. pg_cron Scheduled Hourly Background Jobs
+-- Runs every hour at minute 0: evaluates 10:00 PM nudges and midnight streak cutoffs
+create or replace function public.cron_process_hourly_events()
+returns void as $$
+declare
+  v_functions_url text;
+  v_service_key text;
+begin
+  -- Attempt to retrieve dynamic edge function URL & service key from Postgres settings or Supabase vault
+  begin
+    v_functions_url := current_setting('app.settings.supabase_functions_url', true);
+    v_service_key := current_setting('app.settings.service_role_key', true);
+  exception when others then
+    v_functions_url := null;
+    v_service_key := null;
+  end;
+
+  -- If pg_net is available and URL/key are configured, dispatch HTTP requests to edge functions
+  if v_functions_url is not null and v_service_key is not null then
+    if exists (select 1 from pg_extension where extname = 'pg_net') then
+      perform net.http_post(
+        url := v_functions_url || '/rescue-nudge',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || v_service_key
+        ),
+        body := '{}'::jsonb
+      );
+
+      perform net.http_post(
+        url := v_functions_url || '/resolve-streaks',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || v_service_key
+        ),
+        body := '{}'::jsonb
+      );
+    end if;
+  end if;
+end;
+$$ language plpgsql security definer;
+
+-- Schedule with pg_cron
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    -- Remove old job if exists
+    perform cron.unschedule('inscribe-hourly-nudges-and-streaks')
+    where exists (
+      select 1 from cron.job where jobname = 'inscribe-hourly-nudges-and-streaks'
+    );
+
+    perform cron.schedule(
+      'inscribe-hourly-nudges-and-streaks',
+      '0 * * * *',
+      $$select public.cron_process_hourly_events()$$
+    );
+  end if;
+exception
+  when others then
+    raise notice 'pg_cron extension not configured in current environment';
+end;
+$$;

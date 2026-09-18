@@ -7,6 +7,7 @@
 -- 1. Extensions
 create extension if not exists "uuid-ossp";
 create extension if not exists "pg_cron";
+create extension if not exists "pg_net";
 
 -- 2. User Profiles Table (Linked to auth.users)
 create table if not exists public.profiles (
@@ -199,6 +200,12 @@ create policy "Users can view notifications addressed to them"
   on public.notification_logs for select
   to authenticated
   using (auth.uid() = recipient_id);
+
+create policy "Users can update notifications addressed to them"
+  on public.notification_logs for update
+  to authenticated
+  using (auth.uid() = recipient_id)
+  with check (auth.uid() = recipient_id);
 
 -- 8. Functions and Triggers
 
@@ -451,21 +458,43 @@ alter publication supabase_realtime add table public.covenant_daily_reviews;
 -- Runs every hour at minute 0: evaluates 10:00 PM nudges and midnight streak cutoffs
 create or replace function public.cron_process_hourly_events()
 returns void as $$
+declare
+  v_functions_url text;
+  v_service_key text;
 begin
-  -- Supabase pg_net / Edge Function HTTP trigger can be invoked here:
-  -- perform net.http_post(
-  --   url := 'https://<project-ref>.functions.supabase.co/rescue-nudge',
-  --   headers := '{"Content-Type": "application/json", "Authorization": "Bearer <service-role-key>"}'::jsonb,
-  --   body := '{}'::jsonb
-  -- );
-  -- perform net.http_post(
-  --   url := 'https://<project-ref>.functions.supabase.co/resolve-streaks',
-  --   headers := '{"Content-Type": "application/json", "Authorization": "Bearer <service-role-key>"}'::jsonb,
-  --   body := '{}'::jsonb
-  -- );
-  null;
+  -- Attempt to retrieve dynamic edge function URL & service key from Postgres settings or Supabase vault
+  begin
+    v_functions_url := current_setting('app.settings.supabase_functions_url', true);
+    v_service_key := current_setting('app.settings.service_role_key', true);
+  exception when others then
+    v_functions_url := null;
+    v_service_key := null;
+  end;
+
+  -- If pg_net is available and URL/key are configured, dispatch HTTP requests to edge functions
+  if v_functions_url is not null and v_service_key is not null then
+    if exists (select 1 from pg_extension where extname = 'pg_net') then
+      perform net.http_post(
+        url := v_functions_url || '/rescue-nudge',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || v_service_key
+        ),
+        body := '{}'::jsonb
+      );
+
+      perform net.http_post(
+        url := v_functions_url || '/resolve-streaks',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || v_service_key
+        ),
+        body := '{}'::jsonb
+      );
+    end if;
+  end if;
 end;
-$$ language plpgsql;
+$$ language plpgsql security definer;
 
 -- Schedule with pg_cron
 do $$

@@ -138,7 +138,7 @@ export default function VerseDetailScreen() {
           styles.ctaButton,
           pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] },
         ]}
-        onPress={() => router.push('/practice')}
+        onPress={() => router.push('/inscribe')}
       >
         <Text style={styles.ctaText}>{t('verse.continue')}</Text>
         <ArrowRight color="#FFFFFF" size={20} strokeWidth={2} style={styles.ctaArrow} />

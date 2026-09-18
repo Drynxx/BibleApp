@@ -19,3 +19,6 @@ expo-env.d.ts
 
 # Custom exclusions
 Inscribe-TT/
+.agents/
+.multica/
+AGENTS.md

@@ -103,10 +103,11 @@ describe("Supabase Schema & RLS Policies Validation (20260912000001_inscribe_cor
       expect(sql).toContain("create or replace function public.sync_push_token_to_profile()");
     });
 
-    it("defines atomic stored procedures for review completion and token registration", () => {
+    it("defines atomic stored procedures for review completion, token registration, and cron handler", () => {
       expect(sql).toContain("create or replace function public.register_device_token");
       expect(sql).toContain("create or replace function public.complete_daily_review");
       expect(sql).toContain("create or replace function public.join_covenant_by_code");
+      expect(sql).toContain("create or replace function public.cron_process_hourly_events()");
     });
 
     it("adds tables to supabase_realtime publication", () => {
@@ -114,10 +115,34 @@ describe("Supabase Schema & RLS Policies Validation (20260912000001_inscribe_cor
       expect(sql).toContain("alter publication supabase_realtime add table public.covenant_daily_reviews;");
     });
 
+    it("enables pg_net extension for asynchronous Edge Function invocations", () => {
+      expect(sql).toContain('create extension if not exists "pg_net";');
+    });
+
     it("includes pg_cron schedule configuration", () => {
       expect(sql).toContain("cron.schedule");
       expect(sql).toContain("inscribe-hourly-nudges-and-streaks");
       expect(sql).toContain("0 * * * *");
+    });
+  });
+
+  describe("Documentation Schema Parity (docs/supabase_schema.sql)", () => {
+    let docsSql: string;
+    beforeAll(() => {
+      docsSql = fs.readFileSync(docsSchemaPath, "utf-8");
+    });
+
+    it("includes all core tables, RLS policies, RPCs, and cron schedule in docs schema", () => {
+      expect(docsSql).toContain("public.profiles");
+      expect(docsSql).toContain("public.push_tokens");
+      expect(docsSql).toContain("public.covenants");
+      expect(docsSql).toContain("public.covenant_daily_reviews");
+      expect(docsSql).toContain("public.notification_logs");
+      expect(docsSql).toContain("join_covenant_by_code");
+      expect(docsSql).toContain("complete_daily_review");
+      expect(docsSql).toContain("register_device_token");
+      expect(docsSql).toContain("cron_process_hourly_events");
+      expect(docsSql).toContain("inscribe-hourly-nudges-and-streaks");
     });
   });
 });

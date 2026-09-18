@@ -8,6 +8,8 @@ import {
   calculateDrillScore,
   getMaskPlaceholder,
   generateMaskedTokens,
+  generateFirstLetterTokens,
+  validateFirstLetter,
   VerseToken,
 } from "@/engine/blanking";
 
@@ -73,6 +75,34 @@ describe("Blanking Engine", () => {
       expect(validateWord("păcat", "har")).toBe(false);
       expect(validateWord("", "Cuvântul")).toBe(false);
       expect(validateWord("Cuvântul", "")).toBe(false);
+    });
+  });
+
+  describe("validateFirstLetter", () => {
+    it("matches first letter with Romanian diacritics and case tolerance", () => {
+      expect(validateFirstLetter("c", "Cuvântul")).toBe(true);
+      expect(validateFirstLetter("C", "cuvântul")).toBe(true);
+      expect(validateFirstLetter("s", "Să")).toBe(true);
+      expect(validateFirstLetter("s", "Și")).toBe(true);
+      expect(validateFirstLetter("ș", "Să")).toBe(true);
+      expect(validateFirstLetter("t", "Țara")).toBe(true);
+      expect(validateFirstLetter("ț", "tăblița")).toBe(true);
+      expect(validateFirstLetter("i", "împărat")).toBe(true);
+      expect(validateFirstLetter("î", "inimii")).toBe(true);
+      expect(validateFirstLetter("a", "adevăr")).toBe(true);
+      expect(validateFirstLetter("ă", "Adevăr")).toBe(true);
+    });
+
+    it("matches first letter ignoring leading punctuation", () => {
+      expect(validateFirstLetter("d", "„Domnul”")).toBe(true);
+      expect(validateFirstLetter("c", "«credință»")).toBe(true);
+    });
+
+    it("rejects mismatched letters", () => {
+      expect(validateFirstLetter("x", "Cuvântul")).toBe(false);
+      expect(validateFirstLetter("b", "părăsească")).toBe(false);
+      expect(validateFirstLetter("", "Cuvântul")).toBe(false);
+      expect(validateFirstLetter("c", "")).toBe(false);
     });
   });
 
@@ -274,6 +304,59 @@ describe("Blanking Engine", () => {
 
       expect(maskedCount).toBe(wordTokens.length);
       expect(wordBank.length).toBe(wordTokens.length);
+    });
+
+    it("supports progressive mode (Level 1: 30%, Level 2: 70%, Level 3: first letters, Level 4: 100%)", () => {
+      const wordTokens = tokens.filter((t) => !t.isPunctuation);
+
+      // Level 1: 30%
+      const l1 = generateMaskedTokens(tokens, 1, { mode: "progressive" });
+      expect(l1.maskedTokens.filter((t) => t.isMasked).length).toBe(Math.floor(wordTokens.length * 0.3));
+
+      // Level 2: 70%
+      const l2 = generateMaskedTokens(tokens, 2, { mode: "progressive" });
+      expect(l2.maskedTokens.filter((t) => t.isMasked).length).toBe(Math.floor(wordTokens.length * 0.7));
+
+      // Level 3: First letters only
+      const l3 = generateMaskedTokens(tokens, 3, { mode: "progressive" });
+      expect(l3.maskedTokens.filter((t) => t.isMasked).length).toBe(wordTokens.length);
+      l3.maskedTokens.filter((t) => t.isMasked).forEach((token) => {
+        expect(token.firstLetter).toBe(token.raw.charAt(0));
+      });
+
+      // Level 4: 100%
+      const l4 = generateMaskedTokens(tokens, 4, { mode: "progressive" });
+      expect(l4.maskedTokens.filter((t) => t.isMasked).length).toBe(wordTokens.length);
+    });
+
+    it("supports customRatio option", () => {
+      const wordTokens = tokens.filter((t) => !t.isPunctuation);
+      const custom = generateMaskedTokens(tokens, 1, { customRatio: 0.5 });
+      expect(custom.maskedTokens.filter((t) => t.isMasked).length).toBe(Math.floor(wordTokens.length * 0.5));
+    });
+  });
+
+  describe("generateFirstLetterTokens", () => {
+    it("masks 100% of word tokens leaving punctuation untouched", () => {
+      const verse = "Domnul este Păstorul meu!";
+      const tokens = tokenizeVerse(verse);
+      const { maskedTokens, wordBank } = generateFirstLetterTokens(tokens);
+
+      const wordTokens = tokens.filter((t) => !t.isPunctuation);
+      const maskedList = maskedTokens.filter((t) => t.isMasked);
+
+      expect(maskedList.length).toBe(wordTokens.length);
+      expect(wordBank.length).toBe(wordTokens.length);
+
+      // Verify each masked token has firstLetter populated
+      maskedList.forEach((token) => {
+        expect(token.firstLetter).toBe(token.raw.charAt(0));
+        expect(token.maskLength).toBe(token.raw.length);
+      });
+
+      // Punctuation is not masked
+      const punctToken = maskedTokens.find((t) => t.raw === "!");
+      expect(punctToken?.isMasked).toBe(false);
     });
   });
 });

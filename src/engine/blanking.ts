@@ -129,6 +129,20 @@ export function validateWord(input: string, target: string): boolean {
 }
 
 /**
+ * Compares user input character to the first letter of target word with Romanian diacritic and case tolerance.
+ */
+export function validateFirstLetter(input: string, target: string): boolean {
+  if (!input || !target) return false;
+  const cleanInput = stripPunctuation(input);
+  const cleanTarget = stripPunctuation(target);
+  if (!cleanInput || !cleanTarget) return false;
+  const normInput = normalizeDiacritics(cleanInput);
+  const normTarget = normalizeDiacritics(cleanTarget);
+  if (!normInput || !normTarget) return false;
+  return normInput.charAt(0) === normTarget.charAt(0);
+}
+
+/**
  * Detailed word validation providing exact match, normalized match, and Levenshtein distance.
  */
 export function validateWordDetailed(input: string, target: string): WordValidationResult {
@@ -246,21 +260,85 @@ export function tokenizeVerse(verseText: string): VerseToken[] {
   return tokens;
 }
 
+export interface MaskingOptions {
+  /**
+   * 'standard': Stage 1 = 0%, Stage 2 = 30%, Stage 3 = 70%, Stage 4 = 100%
+   * 'progressive': Stage 1 = 30%, Stage 2 = 70%, Stage 3 = first-letters-only, Stage 4 = 100%
+   * 'firstLettersOnly': all eligible words are masked with first-letter prompts
+   */
+  mode?: 'standard' | 'progressive' | 'firstLettersOnly';
+  customRatio?: number;
+}
+
+/**
+ * Generates masked tokens where all word tokens are converted to first-letter prompts.
+ * Ideal for Level 3 first-letter prompt recitation.
+ */
+export function generateFirstLetterTokens(
+  tokens: VerseToken[]
+): { maskedTokens: MaskedToken[]; wordBank: string[] } {
+  const bank: string[] = [];
+  const maskedTokens: MaskedToken[] = tokens.map((token) => {
+    if (token.isPunctuation) {
+      return {
+        ...token,
+        isMasked: false,
+        userPlacedText: undefined,
+        isCorrect: undefined,
+      };
+    }
+    bank.push(token.raw);
+    return {
+      ...token,
+      isMasked: true,
+      firstLetter: token.raw.charAt(0),
+      maskLength: token.raw.length,
+      userPlacedText: undefined,
+      isCorrect: undefined,
+    };
+  });
+
+  return {
+    maskedTokens,
+    wordBank: [...bank].sort(() => 0.5 - Math.random()),
+  };
+}
+
 /**
  * Generates masked tokens and a scrambled word bank for a given stage.
- * Stage 1: 0% masked (full text read)
- * Stage 2: 30% masked (with firstLetter hint)
- * Stage 3: 70% masked
- * Stage 4: 100% masked (Mastery)
+ * Standard mode:
+ * - Stage 1: 0% masked (full text read)
+ * - Stage 2: 30% masked (with firstLetter hint)
+ * - Stage 3: 70% masked
+ * - Stage 4: 100% masked (Mastery)
+ * Progressive mode:
+ * - Stage 1: 30% masked
+ * - Stage 2: 70% masked
+ * - Stage 3: First letters only
+ * - Stage 4: 100% masked
  */
 export function generateMaskedTokens(
   tokens: VerseToken[],
-  stage: BlankingStage
+  stage: BlankingStage,
+  options?: MaskingOptions
 ): { maskedTokens: MaskedToken[]; wordBank: string[] } {
+  if (options?.mode === 'firstLettersOnly' || (options?.mode === 'progressive' && stage === 3)) {
+    return generateFirstLetterTokens(tokens);
+  }
+
   let maskRatio = 0;
-  if (stage === 2) maskRatio = 0.3;
-  if (stage === 3) maskRatio = 0.7;
-  if (stage === 4) maskRatio = 1.0;
+  if (options?.customRatio !== undefined) {
+    maskRatio = Math.max(0, Math.min(1, options.customRatio));
+  } else if (options?.mode === 'progressive') {
+    if (stage === 1) maskRatio = 0.3;
+    if (stage === 2) maskRatio = 0.7;
+    if (stage === 4) maskRatio = 1.0;
+  } else {
+    // Default 'standard' mode
+    if (stage === 2) maskRatio = 0.3;
+    if (stage === 3) maskRatio = 0.7;
+    if (stage === 4) maskRatio = 1.0;
+  }
 
   const eligibleWordIndices = tokens
     .map((t, idx) => (!t.isPunctuation ? idx : -1))
