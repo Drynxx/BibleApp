@@ -14,6 +14,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -109,9 +110,8 @@ export default function HomeScreen() {
   );
 
   const collections = [
-    { ...progress.savedCollections[0], icon: Leaf, toneBg: Palette.sageLight, accentColor: Palette.sage },
-    { ...progress.savedCollections[1], icon: 'fruit' as const, toneBg: Palette.primaryLight, accentColor: Palette.gold },
-    { ...progress.savedCollections[2], icon: Sun, toneBg: Palette.goldLight, accentColor: Palette.gold },
+    { title: "Psalms of Comfort", completed: 8, total: 12, image: require('../../assets/images/plans/plan-anxiety.jpg') },
+    { title: "Fruit of the Spirit", completed: 5, total: 8, image: require('../../assets/images/plans/plan-grief.jpg') },
   ];
 
   const week = [
@@ -251,31 +251,31 @@ export default function HomeScreen() {
 
         <View style={styles.collectionsGrid}>
           {collections.map((item) => {
-            const Icon = item.icon;
+            const progressPct = Math.round((item.completed / item.total) * 100);
             return (
               <Pressable
                 key={item.title}
                 style={({ pressed }) => [
-                  styles.collectionCard,
-                  { backgroundColor: item.toneBg },
-                  pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] },
+                  styles.collectionWideCard,
+                  pressed && { opacity: 0.95, transform: [{ scale: 0.98 }] },
                 ]}
-                onPress={() => router.push('/verse')}
+                onPress={() => router.push('/inscribe')}
               >
-                <View style={styles.collectionIconContainer}>
-                  {Icon === 'fruit' ? (
-                    <View style={styles.fruitIconWrapper}>
-                      <View style={[styles.fruitDot, { backgroundColor: Palette.primary, bottom: 2, left: 2 }]} />
-                      <View style={[styles.fruitDot, { backgroundColor: Palette.gold, top: 4, right: 4 }]} />
-                      <Leaf color={Palette.sage} size={18} style={{ transform: [{ rotate: '45deg' }] }} />
-                    </View>
-                  ) : (
-                    <Icon color={item.accentColor} size={30} strokeWidth={1.7} />
-                  )}
+                <View style={styles.collectionImageWrapper}>
+                  <Image source={item.image} style={styles.collectionImage} resizeMode="cover" />
+                  <View style={styles.collectionImageOverlay} />
+                  <View style={styles.collectionImageProgressTrack}>
+                    <View style={[styles.collectionImageProgressBar, { width: `${progressPct}%` }]} />
+                  </View>
                 </View>
-
-                <Text style={styles.collectionTitle}>{item.title}</Text>
-                <Text style={styles.collectionCount}>{item.count} Verses</Text>
+                <View style={styles.collectionMetaRow}>
+                  <Text style={styles.collectionTitle} numberOfLines={1}>{item.title}</Text>
+                  <Text style={styles.collectionMetaDot}>·</Text>
+                  <Text style={styles.collectionCountText}>{item.completed} of {item.total} verses</Text>
+                </View>
+                <View style={styles.collectionBottomTrack}>
+                  <View style={[styles.collectionBottomBar, { width: `${progressPct}%` }]} />
+                </View>
               </Pressable>
             );
           })}
@@ -531,49 +531,77 @@ const styles = StyleSheet.create({
   },
   collectionsGrid: {
     flexDirection: 'row',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 16,
     marginTop: 16,
   },
-  collectionCard: {
-    flex: 1,
-    borderRadius: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Palette.border,
+  collectionWideCard: {
+    flexBasis: '47%',
+    flexGrow: 1,
   },
-  collectionIconContainer: {
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fruitIconWrapper: {
-    width: 32,
-    height: 32,
+  collectionImageWrapper: {
     position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
+    aspectRatio: 2.75,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: Palette.border,
   },
-  fruitDot: {
+  collectionImage: {
+    width: '100%',
+    height: '100%',
+  },
+  collectionImageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  collectionImageProgressTrack: {
     position: 'absolute',
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    bottom: 12,
+    left: 12,
+    right: 12,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    overflow: 'hidden',
+  },
+  collectionImageProgressBar: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: '#FFFFFF',
+  },
+  collectionMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 8,
+    gap: 4,
   },
   collectionTitle: {
-    fontFamily: Typography.serifSemiBold,
-    fontSize: 14,
-    textAlign: 'center',
+    fontFamily: Typography.sansSemiBold,
+    fontSize: 13,
     color: Palette.foreground,
-    marginTop: 8,
-    lineHeight: 18,
+    flexShrink: 1,
   },
-  collectionCount: {
-    fontFamily: Typography.sansBold,
-    fontSize: 9,
-    letterSpacing: 1.2,
-    color: Palette.primary,
-    marginTop: 8,
+  collectionMetaDot: {
+    fontFamily: Typography.sansSemiBold,
+    fontSize: 13,
+    color: Palette.mutedForeground,
+  },
+  collectionCountText: {
+    fontFamily: Typography.sansRegular,
+    fontSize: 12,
+    color: Palette.mutedForeground,
+    flexShrink: 0,
+  },
+  collectionBottomTrack: {
+    marginTop: 6,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(212, 175, 55, 0.15)', // Primary with opacity
+    overflow: 'hidden',
+  },
+  collectionBottomBar: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: Palette.primary,
   },
 });
