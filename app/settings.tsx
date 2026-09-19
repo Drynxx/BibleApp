@@ -24,7 +24,7 @@ import { Palette, Typography } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../src/services/authContext';
-import { databaseManager } from '../src/services/db/databaseManager';
+import { DatabaseManager } from '../src/services/db/databaseManager';
 
 type Option = { value: string; label: string };
 
@@ -171,15 +171,16 @@ export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
-  const { signOut, updateLanguage } = useAuth();
+  const { signOut, updateLanguage, profile, updateOnboardingProfile } = useAuth();
 
   const [theme, setTheme] = useState("light");
   const [textSize, setTextSize] = useState("medium");
-  const [bibleLang, setBibleLang] = useState("niv");
   const [dailyNudge, setDailyNudge] = useState(true);
   const [haptics, setHaptics] = useState(true);
   const [sounds, setSounds] = useState(false);
   const [isDownloadingVDCC, setIsDownloadingVDCC] = useState(false);
+
+  const bibleLang = profile?.translation?.toLowerCase() || 'kjv';
 
   const interfaceLang = i18n.language === 'ro' ? 'romanian' : 'english';
 
@@ -196,11 +197,16 @@ export default function SettingsScreen() {
     await signOut();
   };
 
+  const handleTranslationChange = async (val: string) => {
+    Haptics.selectionAsync();
+    await updateOnboardingProfile(val);
+  };
+
   const downloadVDCC = async () => {
     if (isDownloadingVDCC) return;
     try {
       setIsDownloadingVDCC(true);
-      await databaseManager.ensureDbExists('vdcc');
+      await DatabaseManager.ensureDbExists('vdcc');
       Alert.alert('Success', 'VDCC Translation downloaded successfully.');
     } catch (e) {
       Alert.alert('Download Failed', 'Could not download translation.');
@@ -293,7 +299,7 @@ export default function SettingsScreen() {
                     { value: "vdcc", label: "VDCC" },
                   ]}
                   value={bibleLang}
-                  onChange={setBibleLang}
+                  onChange={handleTranslationChange}
                 />
               }
             />

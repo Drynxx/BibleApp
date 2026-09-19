@@ -34,6 +34,9 @@ import { Palette, Typography } from '@/constants/theme';
 import { validateWord, normalizeDiacritics } from '../src/engine/blanking';
 import { BottomSheetMenu } from '../src/components/BottomSheetMenu';
 import { useDailyPractice } from '../src/hooks/useDailyPractice';
+import { useAuth } from '../src/services/authContext';
+import { VerseRepository } from '../src/services/db/verseRepository';
+import { RecallEngine, RecallToken } from '../src/services/practice/recallEngine';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -127,13 +130,35 @@ export default function InscribeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { currentSession } = useDailyPractice();
+  const { profile } = useAuth();
   
-  const verseText = currentSession.verse.text;
-  const words = verseText.split(" ");
-  const hiddenIndexes = t('inscribe.hiddenIndexes', { returnObjects: true }) as number[];
-  const answers = hiddenIndexes.map((index) => words[index] ?? "");
-  const options = t('inscribe.options', { returnObjects: true }) as string[];
   const verseRef = currentSession.verse.reference;
+  const [dbVerseText, setDbVerseText] = useState(currentSession.verse.text);
+  const [recallTokens, setRecallTokens] = useState<RecallToken[]>([]);
+
+  const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
+
+  useEffect(() => {
+    const fetchVerse = async () => {
+      const text = await VerseRepository.getVerse(
+        currentSession.verse.bookId,
+        currentSession.verse.chapter,
+        currentSession.verse.verse,
+        selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
+      );
+      setDbVerseText(text);
+      const tokens = RecallEngine.generateRecallPractice(text, 3);
+      setRecallTokens(tokens);
+    };
+    fetchVerse();
+  }, [currentSession, selectedTranslation]);
+
+  const words = dbVerseText.split(/\s+/);
+  const answers = recallTokens.filter(t => t.type === 'blank').map(t => t.value);
+  const options = React.useMemo(() => {
+    const allOptions = recallTokens.filter(t => t.type === 'blank').flatMap(t => t.options || []);
+    return Array.from(new Set(allOptions)).sort(() => 0.5 - Math.random());
+  }, [recallTokens]);
   
   const [level, setLevel] = useState(1);
   const [picked, setPicked] = useState<string[]>([]);
@@ -141,7 +166,7 @@ export default function InscribeScreen() {
   const [revealed, setRevealed] = useState(0);
   const inputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const complete = revealed === words.length;
+  const complete = revealed >= words.length;
   const [menuVisible, setMenuVisible] = useState(false);
 
   const menuOptions = [
@@ -269,8 +294,8 @@ export default function InscribeScreen() {
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={true}
       >
-        {level === 1 && <LevelOne t={t} verseRef={verseRef} verseText={verseText} onNext={() => setLevel(2)} />}
-        {level === 2 && <LevelTwo t={t} words={words} hiddenIndexes={hiddenIndexes} answers={answers} options={options} picked={picked} wrong={wrong} onChoose={choose} onReset={() => { setPicked([]); setWrong(false); }} onNext={() => setLevel(3)} />}
+        {level === 1 && <LevelOne t={t} verseRef={verseRef} verseText={dbVerseText} onNext={() => setLevel(2)} />}
+        {level === 2 && <LevelTwo t={t} recallTokens={recallTokens} answers={answers} options={options} picked={picked} wrong={wrong} onChoose={choose} onReset={() => { setPicked([]); setWrong(false); }} onNext={() => setLevel(3)} />}
         {level === 3 && <LevelThree t={t} words={words} revealed={revealed} complete={complete} inputRef={inputRef} onType={typeLetter} onFocus={handleFocus} onRestart={() => { setLevel(1); setPicked([]); setRevealed(0); }} onClose={close} />}
       </ScrollView>
     </View>
@@ -302,8 +327,8 @@ function LevelOne({ t, verseRef, verseText, onNext }: { t: any, verseRef: string
   );
 }
 
-function LevelTwo({ t, words, hiddenIndexes, answers, options, picked, wrong, onChoose, onReset, onNext }: { t: any, words: string[], hiddenIndexes: number[], answers: string[], options: string[], picked: string[]; wrong: boolean; onChoose: (word: string) => void; onReset: () => void; onNext: () => void }) {
-  const done = picked.length === answers.length;
+function LevelTwo({ t, recallTokens, answers, options, picked, wrong, onChoose, onReset, onNext }: { t: any, recallTokens: RecallToken[], answers: string[], options: string[], picked: string[]; wrong: boolean; onChoose: (word: string) => void; onReset: () => void; onNext: () => void }) {
+  const done = picked.length === answers.length && answers.length > 0;
   let blank = 0;
   
   return (
@@ -314,10 +339,11 @@ function LevelTwo({ t, words, hiddenIndexes, answers, options, picked, wrong, on
       
       <View style={styles.weaveQuoteContainer}>
         <Text style={styles.weaveQuote}>
-          {words.map((word, index) => {
-            if (!hiddenIndexes.includes(index)) {
-              return <Text key={index}>{word} </Text>;
+          {recallTokens.map((token, index) => {
+            if (token.type === 'text') {
+              return <Text key={index}>{token.value}</Text>;
             }
+            
             const value = picked[blank];
             const current = blank;
             blank += 1;
@@ -344,7 +370,6 @@ function LevelTwo({ t, words, hiddenIndexes, answers, options, picked, wrong, on
                     {"______"}
                   </Text>
                 )}
-                {" "}
               </Text>
             );
           })}

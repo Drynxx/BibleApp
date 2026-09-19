@@ -1,149 +1,103 @@
-import {
-  tokenizeVerse,
-  generateMaskedTokens,
-  normalizeDiacritics,
-  stripPunctuation,
-  validateWord,
-  validateWordDetailed,
-  calculateDrillScore,
-  getMaskPlaceholder,
-  VerseToken,
-  MaskedToken,
-  BlankingStage,
-  WordValidationResult,
-  DrillScoreInput,
-  DrillScoreResult,
-} from '../../engine/blanking';
-
-export * from '../../engine/blanking';
-
-export type PracticeToken = {
+export type RecallToken = {
   type: 'text' | 'blank';
   value: string;
-  options?: string[]; // Includes the correct value + 3 distractors, shuffled
+  options?: string[]; // Includes the correct value + 3 distractors
 };
 
-const STOP_WORDS_EN = new Set([
-  'the', 'and', 'of', 'to', 'unto', 'hath', 'thou', 'thy', 'thine', 'thee',
-  'in', 'a', 'is', 'that', 'it', 'for', 'on', 'with', 'as', 'he', 'his', 'him',
-  'be', 'shall', 'will', 'not', 'but', 'by', 'from', 'they', 'them', 'their',
-  'are', 'was', 'were', 'which', 'who', 'whom', 'whose', 'this', 'these', 'those',
-  'an', 'at', 'or', 'if', 'we', 'us', 'our', 'my', 'mine', 'me', 'ye', 'you', 'your'
+const STOP_WORDS = new Set([
+  'the', 'and', 'of', 'to', 'unto', 'hath', 'thou', 'a', 'in', 'that', 'is', 'for', 'it', 'with', 'as', 'he', 'his', 'they', 'be', 'not', 'by', 'but', 'have', 'from', 'which', 'their', 'was', 'were', 'all', 'are', 'shall', 'will', 'this', 'on', 'at', 'or', 'an'
 ]);
 
-const STOP_WORDS_RO = new Set([
-  'și', 'de', 'la', 'în', 'pentru', 'cu', 'pe', 'că', 'să', 'un', 'o', 'din',
-  'care', 'este', 'sunt', 'au', 'a', 'al', 'ai', 'ale', 'lui', 'lor', 'el', 'ea',
-  'ei', 'ele', 'voi', 'noi', 'tu', 'eu', 'mă', 'te', 'se', 'ne', 'vă', 'le', 'îi',
-  'îl', 'o', 'nu', 'dar', 'iar', 'ci', 'sau', 'dacă', 'nici', 'cum', 'ce', 'cine',
-  'unde', 'când', 'acest', 'această', 'acești', 'aceste', 'acel', 'acea', 'acei', 'acele',
-  'fost', 'era', 'vor', 'ar', 'am', 'ai', 'ați', 'prin', 'spre', 'până', 'după', 'peste'
-]);
-
-const DISTRACTORS_EN = [
-  'faith', 'spirit', 'flesh', 'blood', 'grace', 'mercy', 'truth', 'light', 'darkness',
-  'heaven', 'earth', 'water', 'fire', 'word', 'sword', 'shield', 'mountain', 'valley',
-  'righteousness', 'sin', 'love', 'hope', 'peace', 'joy', 'sorrow', 'life', 'death',
-  'father', 'son', 'brother', 'king', 'servant', 'prophet', 'priest', 'temple',
-  'heart', 'soul', 'mind', 'strength', 'wisdom', 'knowledge', 'understanding',
-  'blessing', 'curse', 'glory', 'honor', 'power', 'dominion', 'salvation'
+const DISTRACTOR_POOL = [
+  'faith', 'love', 'hope', 'peace', 'grace', 'mercy', 'truth', 'light', 'spirit', 'flesh', 'heart', 'soul', 'mind', 'strength', 'word', 'life', 'death', 'sin', 'righteousness', 'salvation', 'heaven', 'earth', 'water', 'fire', 'bread', 'wine', 'blood', 'body', 'church', 'temple', 'king', 'lord', 'servant', 'master', 'brother', 'sister', 'father', 'mother', 'son', 'daughter', 'day', 'night', 'morning', 'evening', 'time', 'eternity'
 ];
 
-const DISTRACTORS_RO = [
-  'credință', 'duh', 'carne', 'sânge', 'har', 'milă', 'adevăr', 'lumină', 'întuneric',
-  'cer', 'pământ', 'apă', 'foc', 'cuvânt', 'sabie', 'scut', 'munte', 'vale',
-  'neprihănire', 'păcat', 'dragoste', 'nădejde', 'pace', 'bucurie', 'întristare', 'viață', 'moarte',
-  'tată', 'fiu', 'frate', 'împărat', 'rob', 'proroc', 'preot', 'templu',
-  'inimă', 'suflet', 'minte', 'putere', 'înțelepciune', 'cunoștință', 'pricepere',
-  'binecuvântare', 'blestem', 'slavă', 'cinste', 'domnie', 'stăpânire', 'mântuire'
-];
-
-function shuffle<T>(array: T[]): T[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-export const recallEngine = {
-  // Re-export core algorithms
-  tokenizeVerse,
-  generateMaskedTokens,
-  normalizeDiacritics,
-  stripPunctuation,
-  validateWord,
-  validateWordDetailed,
-  calculateDrillScore,
-  getMaskPlaceholder,
-
+export class RecallEngine {
   /**
-   * Transforms a raw verse text into an array of practice tokens (texts and blanks).
+   * Generates an active recall practice session from raw verse text.
+   * @param rawText The raw verse text.
+   * @param difficultyLevel Determines how many words become blanks. (e.g., 1 = 1 blank, 2 = 2 blanks, etc.)
    */
-  generateRecallPractice(rawText: string, difficultyLevel: number = 1, language: 'en' | 'ro' = 'en'): PracticeToken[] {
-    if (!rawText) return [];
+  static generateRecallPractice(rawText: string, difficultyLevel: number): RecallToken[] {
+    // 1. Tokenize preserving punctuation attached to words or as separate tokens?
+    // Let's split by regex that captures words and non-words separately.
+    // Example: "For God so loved the world," -> ["For", " ", "God", " ", "so", " ", "loved", " ", "the", " ", "world", ","]
+    const regex = /([\w'-]+)|([^\w'-]+)/g;
+    const rawTokens = [...rawText.matchAll(regex)].map(m => m[0]);
 
-    const stopWords = language === 'ro' ? STOP_WORDS_RO : STOP_WORDS_EN;
-    const distractors = language === 'ro' ? DISTRACTORS_RO : DISTRACTORS_EN;
-
-    // Split text keeping words and non-words (punctuation/spaces) separate
-    const rawTokens = rawText.split(/([a-zA-Z0-9ăîșțâĂÎȘȚÂşţŞŢ\u00C0-\u017F]+)/);
-
-    // Identify candidate words for blanking
-    const candidates: { index: number; word: string }[] = [];
+    // 2. Identify candidate words for blanking
+    const candidateIndices: number[] = [];
     for (let i = 0; i < rawTokens.length; i++) {
       const token = rawTokens[i];
-      if (/^[a-zA-Z0-9ăîșțâĂÎȘȚÂşţŞŢ\u00C0-\u017F]+$/.test(token)) {
-        if (!stopWords.has(token.toLowerCase()) && !stopWords.has(normalizeDiacritics(token))) {
-          candidates.push({ index: i, word: token });
+      // If it's a word and not a stop word
+      if (/^[\w'-]+$/.test(token)) {
+        if (!STOP_WORDS.has(token.toLowerCase())) {
+          candidateIndices.push(i);
         }
       }
     }
 
-    // Determine how many blanks to create based on difficulty
-    const numBlanks = Math.min(difficultyLevel, candidates.length);
+    // 3. Select N words to blank based on difficultyLevel
+    const blanksCount = Math.min(difficultyLevel, candidateIndices.length);
+    const selectedIndices = new Set<number>();
     
-    // Randomly select N candidates to become blanks
-    const selectedBlanks = new Set(
-      shuffle(candidates).slice(0, numBlanks).map(c => c.index)
-    );
+    // Simple random selection
+    const shuffledCandidates = [...candidateIndices].sort(() => 0.5 - Math.random());
+    for (let i = 0; i < blanksCount; i++) {
+      selectedIndices.add(shuffledCandidates[i]);
+    }
 
-    // Build the final typed token array
-    const result: PracticeToken[] = [];
+    // 4. Build output array
+    const output: RecallToken[] = [];
     
+    // We can merge consecutive non-blank tokens to keep the array smaller
+    let currentTextBuffer = "";
+
     for (let i = 0; i < rawTokens.length; i++) {
       const token = rawTokens[i];
-      if (!token) continue; // Skip empty strings from regex split
+      
+      if (selectedIndices.has(i)) {
+        // Push any accumulated text first
+        if (currentTextBuffer.length > 0) {
+          output.push({ type: 'text', value: currentTextBuffer });
+          currentTextBuffer = "";
+        }
 
-      if (selectedBlanks.has(i)) {
-        // Generate options (3 random distractors + the correct word)
-        const correctWord = token;
-        // Filter out the correct word from the pool using diacritic-aware validation
-        let availableDistractors = distractors.filter(d => !validateWord(d, correctWord));
-        availableDistractors = shuffle(availableDistractors).slice(0, 3);
-        
-        // Capitalize distractors if the correct word is capitalized
-        const isCapitalized = /^[A-ZĂÎȘȚÂŞŢ]/.test(correctWord);
-        const capitalizedDistractors = availableDistractors.map(d => 
-          isCapitalized ? d.charAt(0).toUpperCase() + d.slice(1) : d
-        );
-
-        const options = shuffle([correctWord, ...capitalizedDistractors]);
-
-        result.push({
-          type: 'blank',
-          value: correctWord,
-          options
-        });
+        // Generate distractors
+        const options = this.generateOptions(token);
+        output.push({ type: 'blank', value: token, options });
       } else {
-        result.push({
-          type: 'text',
-          value: token
-        });
+        currentTextBuffer += token;
       }
     }
 
-    return result;
+    if (currentTextBuffer.length > 0) {
+      output.push({ type: 'text', value: currentTextBuffer });
+    }
+
+    return output;
   }
-};
+
+  private static generateOptions(correctAnswer: string): string[] {
+    const distractors = new Set<string>();
+    const lowerCorrect = correctAnswer.toLowerCase();
+    
+    // Ensure we don't pick the correct answer as a distractor
+    while (distractors.size < 3) {
+      const randomDistractor = DISTRACTOR_POOL[Math.floor(Math.random() * DISTRACTOR_POOL.length)];
+      if (randomDistractor.toLowerCase() !== lowerCorrect) {
+        // Try to match capitalization roughly
+        const isCapitalized = /^[A-Z]/.test(correctAnswer);
+        const formattedDistractor = isCapitalized 
+          ? randomDistractor.charAt(0).toUpperCase() + randomDistractor.slice(1)
+          : randomDistractor;
+          
+        distractors.add(formattedDistractor);
+      }
+    }
+
+    // Combine and shuffle
+    const options = [correctAnswer, ...Array.from(distractors)];
+    return options.sort(() => 0.5 - Math.random());
+  }
+}

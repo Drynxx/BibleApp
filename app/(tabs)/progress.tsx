@@ -386,14 +386,7 @@ const styles = StyleSheet.create({
     color: Palette.mutedForeground,
     marginTop: 10,
   },
-  iconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.03)',
-  },
+
   pressed: {
     opacity: 0.6,
   },

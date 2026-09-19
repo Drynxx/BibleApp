@@ -23,6 +23,7 @@ import { useAuth } from '../../src/services/authContext';
 import { useCovenant } from '../../src/services/covenantContext';
 import { useDailyPractice } from '../../src/hooks/useDailyPractice';
 import { useUserProgress } from '../../src/hooks/useUserProgress';
+import { VerseRepository } from '../../src/services/db/verseRepository';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -34,7 +35,23 @@ export default function HomeScreen() {
   
   const { currentSession } = useDailyPractice();
   const progress = useUserProgress();
-  
+  const [dbVerseText, setDbVerseText] = useState(currentSession.verse.text);
+
+  const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
+
+  React.useEffect(() => {
+    const fetchVerse = async () => {
+      const text = await VerseRepository.getVerse(
+        currentSession.verse.bookId,
+        currentSession.verse.chapter,
+        currentSession.verse.verse,
+        selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
+      );
+      setDbVerseText(text);
+    };
+    fetchVerse();
+  }, [currentSession, selectedTranslation]);
+
   const displayName = profile?.displayName || 'Sarah';
   const streak = progress.currentStreak;
   const isDoneToday = progress.isDoneToday;
@@ -137,7 +154,7 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.verseQuote}>
-          "{currentSession.verse.text}"
+          "{dbVerseText}"
         </Text>
 
         <Text style={styles.verseFootnote}>{t('home.loveChanges')}</Text>

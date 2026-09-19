@@ -350,10 +350,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateOnboardingProfile = async (translation: string) => {
-    if (!user || !isSupabaseConfigured) return {};
-    
     if (profile) {
       setProfile({ ...profile, translation });
+    }
+
+    // Save to local storage for demo mode
+    if (!isSupabaseConfigured || !user) {
+      if (profile) {
+        try {
+          await AsyncStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ ...profile, translation }));
+        } catch {}
+      }
+      return {};
     }
 
     const { error } = await supabase

@@ -1,101 +1,125 @@
+import { File, Directory, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system/legacy';
 import * as SQLite from 'expo-sqlite';
 import { Asset } from 'expo-asset';
-import { supabase } from '../supabase';
+import { supabase } from '../supabase'; // Ensure this exists to fetch URL
 
-// In Expo Go, we must use the scoped documentDirectory for file system writes to avoid sandbox restrictions.
-const DB_DIR = Platform.OS === 'web' 
-  ? '' 
-  : `${FileSystem.documentDirectory}SQLite/`;
+const DB_DIR = Platform.OS !== 'web' ? new Directory(Paths.document, 'SQLite') : null as any;
 
-export const databaseManager = {
+export class DatabaseManager {
   /**
-   * Ensures the database file exists in the app's internal SQLite directory.
-   * If KJV, copies from local assets. If VDCC, downloads from Supabase public storage.
+   * Ensures the requested database exists in the local SQLite directory.
+   * If it doesn't exist, it copies it from assets or downloads it from Supabase.
    */
-  async ensureDbExists(translation: 'kjv' | 'vdcc'): Promise<void> {
-    if (Platform.OS === 'web') {
-      console.warn('[DB INIT] Web platform does not support expo-file-system for SQLite asset initialization.');
-      return;
-    }
-    
-    const dirInfo = await FileSystem.getInfoAsync(DB_DIR);
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(DB_DIR, { intermediates: true });
-    }
-
-    if (translation === 'kjv') {
-      const dbPath = `${DB_DIR}kjv.sqlite`;
-      const fileInfo = await FileSystem.getInfoAsync(dbPath);
-      
-      console.log(`[DB INIT] Checking kjv.sqlite at ${dbPath}. Exists: ${fileInfo.exists}, Size: ${fileInfo.exists ? fileInfo.size : 'N/A'}`);
-      
-      // If the file doesn't exist OR it's suspiciously small (an auto-created empty DB), copy it again
-      const isInvalidDb = !fileInfo.exists || (fileInfo.isDirectory === false && fileInfo.size < 100000);
-      
-      if (isInvalidDb) {
-        console.log(`[DB INIT] kjv.sqlite is invalid/missing. Re-copying from assets...`);
-        if (fileInfo.exists) {
-          await FileSystem.deleteAsync(dbPath, { idempotent: true });
-        }
-        try {
-          const assetModule = require('../../../assets/db/kjv.sqlite');
-          console.log(`[DB INIT] assetModule:`, typeof assetModule, assetModule);
-          
-          const asset = Asset.fromModule(assetModule);
-          console.log(`[DB INIT] Asset info:`, { uri: asset.uri, localUri: asset.localUri });
-          
-          // In development, Metro serves assets over HTTP. We must use downloadAsync, not copyAsync.
-          console.log(`[DB INIT] Downloading asset from ${asset.uri} to ${dbPath}`);
-          await FileSystem.downloadAsync(asset.uri, dbPath);
-          
-          const newFileInfo = await FileSystem.getInfoAsync(dbPath);
-          console.log(`[DB INIT] Finished copying. New size: ${newFileInfo.exists ? newFileInfo.size : 'FAILED'}`);
-        } catch (error) {
-          console.warn('[DB INIT] Could not copy bundled KJV db to internal directory:', error);
-        }
-      }
-    } else if (translation === 'vdcc') {
-      const dbPath = `${DB_DIR}cornilescu.sqlite`;
-      const fileInfo = await FileSystem.getInfoAsync(dbPath);
-      
-      const isInvalidDb = !fileInfo.exists || (fileInfo.isDirectory === false && fileInfo.size < 100000);
-      
-      if (isInvalidDb) {
-        if (fileInfo.exists) {
-          await FileSystem.deleteAsync(dbPath, { idempotent: true });
-        }
-        try {
-          // Get public URL from Supabase storage
-          const { data } = supabase.storage
-            .from('bible-translations')
-            .getPublicUrl('cornilescu.sqlite');
-
-          if (data?.publicUrl) {
-            console.log(`Downloading VDCC database from: ${data.publicUrl}`);
-            await FileSystem.downloadAsync(data.publicUrl, dbPath);
-          }
-        } catch (error) {
-          console.warn('Could not download remote VDCC db:', error);
-          throw error;
-        }
-      }
-    }
-  },
-
-  /**
-   * Returns a connection to the specified translation DB.
-   */
-  async getConnection(translation: 'kjv' | 'vdcc') {
-    const dbName = translation === 'kjv' ? 'kjv.sqlite' : 'cornilescu.sqlite';
+  static async ensureDbExists(translation: 'kjv' | 'vdcc' | 'cornilescu', forceOverwrite: boolean = false): Promise<boolean> {
+    if (Platform.OS === 'web') return false;
     try {
-      // The native SQLite module expects a raw file path, not a file:// URI
-      const dirPath = DB_DIR.startsWith('file://') ? DB_DIR.substring(7) : DB_DIR;
-      return await SQLite.openDatabaseAsync(dbName, { useNewConnection: true }, dirPath);
-    } catch (error) {
-      console.warn(`Failed to open database connection for ${dbName}:`, error);
+      if (!DB_DIR.exists) {
+        DB_DIR.create();
+      }
+
+      let dbName = 'kjv.sqlite';
+      if (translation === 'vdcc' || translation === 'cornilescu') dbName = 'cornilescu.sqlite';
+
+      const destFile = new File(DB_DIR, dbName);
+
+      if (destFile.exists && !forceOverwrite) {
+        return true;
+      }
+
+      if (forceOverwrite) {
+        try {
+          await SQLite.deleteDatabaseAsync(dbName);
+        } catch (e) { }
+
+        try {
+          // Explicitly delete the file itself so File.copy or File.downloadFileAsync doesn't throw "Destination already exists"
+          destFile.delete();
+        } catch (e) { }
+      }
+
+      if (translation === 'kjv') {
+        // Copy from local bundled assets
+        const asset = await Asset.loadAsync(require('../../../assets/db/kjv_v2.sqlite'));
+        const uri = asset[0].localUri || asset[0].uri;
+
+        console.log(`Asset URI resolved: ${uri}`);
+
+        if (uri.startsWith('http')) {
+          await File.downloadFileAsync(uri, destFile);
+        } else {
+          const sourceFile = new File(uri);
+          await sourceFile.copy(destFile);
+        }
+      } else {
+        // Download VDCC/Cornilescu from Supabase public bucket
+        const { data } = supabase.storage.from('bible-translations').getPublicUrl('cornilescu.sqlite');
+
+        if (!data.publicUrl) {
+          throw new Error("Failed to get public URL for Cornilescu database");
+        }
+
+        await File.downloadFileAsync(data.publicUrl, destFile);
+      }
+      
+      return true;
+    } catch (e) {
+      console.error(`Error ensuring DB exists for ${translation}:`, e);
+      return false;
+    }
+  }
+
+  /**
+   * Returns a SQLite database connection. 
+   * It assumes ensureDbExists was already called successfully.
+   */
+  static async getConnection(translation: 'kjv' | 'vdcc' | 'cornilescu'): Promise<SQLite.SQLiteDatabase | null> {
+    if (Platform.OS === 'web') return null;
+    let dbName = 'kjv.sqlite';
+    if (translation === 'vdcc' || translation === 'cornilescu') dbName = 'cornilescu.sqlite';
+
+    try {
+      // 1. Ensure the DB file is downloaded/copied first
+      await this.ensureDbExists(translation);
+
+      const destFile = new File(DB_DIR, dbName);
+      if (!destFile.exists) {
+        console.warn(`Database ${dbName} does not exist yet. Returning null.`);
+        return null;
+      }
+
+      let db = await SQLite.openDatabaseAsync(dbName, { useNewConnection: true }, DB_DIR.uri);
+
+      // 2. Validate DB is not empty/corrupted (0-byte file from a failed copy)
+      try {
+        await db.getFirstAsync('SELECT 1 FROM verses LIMIT 1');
+      } catch (validationError) {
+        console.warn(`Database ${dbName} is corrupt or empty (Validation Error: ${validationError.message}). Re-creating...`);
+        try { await db.closeAsync(); } catch (e) { }
+
+        // Re-attempt download/copy FORCING overwrite
+        const success = await this.ensureDbExists(translation, true);
+        if (!success) {
+          console.error("ensureDbExists returned false during recreation!");
+          return null;
+        }
+
+        // Re-open
+        db = await SQLite.openDatabaseAsync(dbName, { useNewConnection: true }, DB_DIR.uri);
+
+        // Final validation to avoid returning a corrupt DB
+        try {
+          await db.getFirstAsync('SELECT 1 FROM verses LIMIT 1');
+        } catch (finalError) {
+          console.error(`Database is STILL corrupt after recreation! finalError: ${finalError.message}`);
+          return null; // Return null instead of crashing the app!
+        }
+      }
+
+      return db;
+    } catch (e) {
+      console.error(`Failed to open DB connection for ${translation}:`, e);
       return null;
     }
   }
-};
+}

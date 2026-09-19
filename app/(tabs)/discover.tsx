@@ -175,13 +175,13 @@ export default function DiscoverScreen() {
                     <View style={styles.featuredSection}>
                       <View style={styles.featuredHeader}>
                         <Text style={styles.featuredTitle}>{t('discover.featuredPlan', 'Featured plan')}</Text>
-                        <Text style={styles.featuredCount}>{t('discover.versesCount', { count: featuredPack.count })}</Text>
+                        <Text style={styles.featuredCount}>{t('discover.versesCount', { count: featuredPack.verses })}</Text>
                       </View>
                       <Pressable style={styles.featuredCard} onPress={() => setPreview({ kind: 'plan', ...featuredPack })}>
                         <Image source={featuredPack.image} style={styles.featuredImage} />
                         <View style={styles.featuredOverlay} />
                         <View style={styles.featuredContent}>
-                          <Text style={styles.featuredCategory}>{featuredPack.category} · {featuredPack.count} verses</Text>
+                          <Text style={styles.featuredCategory}>{featuredPack.category} · {featuredPack.verses} verses</Text>
                           <Text style={styles.featuredCardTitle}>{featuredPack.title}</Text>
                           <Text style={styles.featuredCardDesc}>{featuredPack.description}</Text>
                         </View>
@@ -334,7 +334,7 @@ function PlanRow({ pack, onOpen }: { pack: any, onOpen: () => void }) {
     <Pressable style={styles.planRow} onPress={onOpen}>
       <Image source={pack.image} style={styles.planRowImg} />
       <View style={styles.planRowInfo}>
-        <Text style={styles.planRowEyebrow}>{pack.category} · {pack.count} verses</Text>
+        <Text style={styles.planRowEyebrow}>{pack.category} · {pack.verses} verses</Text>
         <Text style={styles.planRowTitle} numberOfLines={1}>{pack.title}</Text>
         <Text style={styles.planRowDesc} numberOfLines={1}>{pack.description}</Text>
       </View>
@@ -842,7 +842,11 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalContent: {

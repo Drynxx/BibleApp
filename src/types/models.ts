@@ -1,6 +1,9 @@
 export interface BibleVerse {
   id: string;
   reference: string; // e.g. "John 3:16"
+  bookId: number;
+  chapter: number;
+  verse: number;
   text: string;
   translation: string;
   isMastered: boolean;
