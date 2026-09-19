@@ -134,7 +134,15 @@ export default function InscribeScreen() {
   const { currentSession } = useDailyPractice();
   const { profile } = useAuth();
   
-  const verseRef = currentSession.verse.reference;
+  const formatReference = (bookId: number, chapter: number, verse: number) => {
+    const books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
+    return `${books[bookId - 1] || 'Unknown'} ${chapter}:${verse}`;
+  };
+
+  const b = book ? parseInt(book as string) : currentSession.verse.bookId;
+  const c = chapter ? parseInt(chapter as string) : currentSession.verse.chapter;
+  const v = verse ? parseInt(verse as string) : currentSession.verse.verse;
+  const verseRef = formatReference(b, c, v);
   const [dbVerseText, setDbVerseText] = useState(currentSession.verse.text);
   const [recallTokens, setRecallTokens] = useState<RecallToken[]>([]);
 
@@ -142,10 +150,6 @@ export default function InscribeScreen() {
 
   useEffect(() => {
     const fetchVerse = async () => {
-      const b = book ? parseInt(book as string) : currentSession.verse.bookId;
-      const c = chapter ? parseInt(chapter as string) : currentSession.verse.chapter;
-      const v = verse ? parseInt(verse as string) : currentSession.verse.verse;
-
       const text = await VerseRepository.getVerse(
         b, c, v,
         selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
@@ -232,10 +236,7 @@ export default function InscribeScreen() {
   };
 
   const close = () => {
-    // If we're not using the queue, just close
-    if (!queueId) {
-      router.back();
-    }
+    router.back();
   };
   
   const choose = (word: string) => {

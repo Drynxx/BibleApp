@@ -86,6 +86,25 @@ export class QueueManager {
     return null;
   }
 
+  static async getActiveQueue(userId: string, limit: number = 4): Promise<PracticeQueueItem[]> {
+    if (!userId) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('practice_queue')
+        .select('*')
+        .eq('user_id', userId)
+        .order('next_review_at', { ascending: true })
+        .limit(limit);
+
+      if (error || !data) return [];
+      return data;
+    } catch (e) {
+      console.warn("Active Queue error:", e);
+      return [];
+    }
+  }
+
   static async updateVerseProgress(queueId: string, grade: QueueGrade) {
     // 1. Fetch current row
     const { data: row, error: fetchError } = await supabase

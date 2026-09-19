@@ -39,8 +39,9 @@ export default function HomeScreen() {
   const { currentSession } = useDailyPractice();
   const progress = useUserProgress();
   const [dbVerseText, setDbVerseText] = useState(currentSession.verse.text);
-  const [dueQueueItem, setDueQueueItem] = useState<PracticeQueueItem | null>(null);
+  const [activeQueue, setActiveQueue] = useState<PracticeQueueItem[]>([]);
   const [displayReference, setDisplayReference] = useState(currentSession.verse.reference);
+  const [dailyVerseRef, setDailyVerseRef] = useState({ book: currentSession.verse.bookId, chapter: currentSession.verse.chapter, verse: currentSession.verse.verse });
 
   // Format reference function
   const formatReference = (book: number, chapter: number, verse: number) => {
@@ -56,30 +57,13 @@ export default function HomeScreen() {
       let chapter = currentSession.verse.chapter;
       let verse = currentSession.verse.verse;
 
-      if (user) {
-        const queuedItem = await QueueManager.getDueVerse(user.id);
-        if (queuedItem) {
-          bookId = queuedItem.book;
-          chapter = queuedItem.chapter;
-          verse = queuedItem.verse;
-          setDueQueueItem(queuedItem);
-        } else {
-          // Fallback to Dynamic Daily Verse if queue is empty
-          const dailyVerse = await DiscoverService.getVerseOfTheDay();
-          if (dailyVerse) {
-            bookId = dailyVerse.book;
-            chapter = dailyVerse.chapter;
-            verse = dailyVerse.verse;
-          }
-        }
-      } else {
-        // Not logged in, use Dynamic Daily Verse
-        const dailyVerse = await DiscoverService.getVerseOfTheDay();
-        if (dailyVerse) {
-          bookId = dailyVerse.book;
-          chapter = dailyVerse.chapter;
-          verse = dailyVerse.verse;
-        }
+      // Phase 1: Purely dynamic daily verse, ignore queue
+      const dailyVerse = await DiscoverService.getVerseOfTheDay();
+      if (dailyVerse) {
+        bookId = dailyVerse.book;
+        chapter = dailyVerse.chapter;
+        verse = dailyVerse.verse;
+        setDailyVerseRef({ book: bookId, chapter: chapter, verse: verse });
       }
 
       setDisplayReference(formatReference(bookId, chapter, verse));
@@ -92,6 +76,11 @@ export default function HomeScreen() {
       );
       if (text) {
         setDbVerseText(text);
+      }
+
+      if (user) {
+        const queue = await QueueManager.getActiveQueue(user.id, 4);
+        setActiveQueue(queue);
       }
     };
     fetchVerse();
@@ -109,10 +98,7 @@ export default function HomeScreen() {
     }, [])
   );
 
-  const collections = [
-    { title: "Psalms of Comfort", completed: 8, total: 12, image: require('../../assets/images/plans/plan-anxiety.jpg') },
-    { title: "Fruit of the Spirit", completed: 5, total: 8, image: require('../../assets/images/plans/plan-grief.jpg') },
-  ];
+  // Old static collections removed per Phase 2
 
   const week = [
     { day: t('progress.mon'), done: true },
@@ -187,7 +173,9 @@ export default function HomeScreen() {
       {/* Featured Verse Card */}
       <Pressable
         style={({ pressed }) => [styles.verseCard, pressed && { opacity: 0.96 }]}
-        onPress={() => router.push('/verse')}
+        onPress={() => {
+          // TODO: Route to clean reading view
+        }}
       >
         {/* Background decorative blob */}
         <View style={styles.verseBlobOne} />
@@ -206,11 +194,11 @@ export default function HomeScreen() {
         <Text style={styles.verseFootnote}>{t('home.loveChanges')}</Text>
       </Pressable>
 
-      {/* Start Practice CTA */}
+      {/* Start Practice CTA for Daily Verse */}
       <Pressable
         style={({ pressed }) => [
           styles.ctaButton,
-          isDoneToday && { backgroundColor: Palette.primary }, // Make it solid if done
+          isDoneToday && { backgroundColor: Palette.primary },
           pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] },
         ]}
         onPress={() => {
@@ -218,10 +206,9 @@ export default function HomeScreen() {
           router.push({
             pathname: '/inscribe',
             params: {
-              queueId: dueQueueItem?.id,
-              book: dueQueueItem?.book,
-              chapter: dueQueueItem?.chapter,
-              verse: dueQueueItem?.verse
+              book: dailyVerseRef.book,
+              chapter: dailyVerseRef.chapter,
+              verse: dailyVerseRef.verse
             }
           });
         }}
@@ -243,35 +230,48 @@ export default function HomeScreen() {
       <View style={styles.collectionsSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('home.continueJourney')}</Text>
-          <Pressable style={styles.seeAllButton}>
+          <Pressable style={styles.seeAllButton} onPress={() => router.push('/(tabs)/discover')}>
             <Text style={styles.seeAllText}>{t('progress.seeAll')}</Text>
             <ArrowRight color={Palette.primary} size={15} />
           </Pressable>
         </View>
 
         <View style={styles.collectionsGrid}>
-          {collections.map((item) => {
-            const progressPct = Math.round((item.completed / item.total) * 100);
+          {activeQueue.map((item, index) => {
+            const progressPct = Math.min(100, Math.round(((item.ease_factor || 1.3) / 2.5) * 100));
+            const image = index % 2 === 0
+              ? require('../../assets/images/plans/plan-anxiety.jpg')
+              : require('../../assets/images/plans/plan-grief.jpg');
+
             return (
               <Pressable
-                key={item.title}
+                key={item.id}
                 style={({ pressed }) => [
                   styles.collectionWideCard,
                   pressed && { opacity: 0.95, transform: [{ scale: 0.98 }] },
                 ]}
-                onPress={() => router.push('/inscribe')}
+                onPress={() => router.push({
+                  pathname: '/inscribe',
+                  params: {
+                    queueId: item.id,
+                    book: item.book,
+                    chapter: item.chapter,
+                    verse: item.verse
+                  }
+                })}
               >
                 <View style={styles.collectionImageWrapper}>
-                  <Image source={item.image} style={styles.collectionImage} resizeMode="cover" />
-                  <View style={styles.collectionImageOverlay} />
+                  <Image source={image} style={styles.collectionImage} resizeMode="cover" />
                   <View style={styles.collectionImageProgressTrack}>
                     <View style={[styles.collectionImageProgressBar, { width: `${progressPct}%` }]} />
                   </View>
                 </View>
                 <View style={styles.collectionMetaRow}>
-                  <Text style={styles.collectionTitle} numberOfLines={1}>{item.title}</Text>
+                  <Text style={styles.collectionTitle} numberOfLines={1}>
+                    {formatReference(item.book, item.chapter, item.verse)}
+                  </Text>
                   <Text style={styles.collectionMetaDot}>·</Text>
-                  <Text style={styles.collectionCountText}>{item.completed} of {item.total} verses</Text>
+                  <Text style={styles.collectionCountText}>{progressPct}% Mastery</Text>
                 </View>
                 <View style={styles.collectionBottomTrack}>
                   <View style={[styles.collectionBottomBar, { width: `${progressPct}%` }]} />
@@ -544,15 +544,12 @@ const styles = StyleSheet.create({
     aspectRatio: 2.75,
     borderRadius: 8,
     overflow: 'hidden',
-    backgroundColor: Palette.border,
+    backgroundColor: '#000000',
   },
   collectionImage: {
     width: '100%',
     height: '100%',
-  },
-  collectionImageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    opacity: 0.55,
   },
   collectionImageProgressTrack: {
     position: 'absolute',
@@ -563,6 +560,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: 'rgba(255,255,255,0.35)',
     overflow: 'hidden',
+    zIndex: 2,
   },
   collectionImageProgressBar: {
     height: '100%',
@@ -576,18 +574,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   collectionTitle: {
-    fontFamily: Typography.sansSemiBold,
+    fontFamily: Typography.sansBold,
     fontSize: 13,
     color: Palette.foreground,
     flexShrink: 1,
   },
   collectionMetaDot: {
-    fontFamily: Typography.sansSemiBold,
+    fontFamily: Typography.sansBold,
     fontSize: 13,
     color: Palette.mutedForeground,
   },
   collectionCountText: {
-    fontFamily: Typography.sansRegular,
+    fontFamily: Typography.sansBold,
     fontSize: 12,
     color: Palette.mutedForeground,
     flexShrink: 0,
