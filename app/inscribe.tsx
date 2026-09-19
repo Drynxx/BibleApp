@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   ArrowRight,
   Book,
@@ -37,6 +37,7 @@ import { useDailyPractice } from '../src/hooks/useDailyPractice';
 import { useAuth } from '../src/services/authContext';
 import { VerseRepository } from '../src/services/db/verseRepository';
 import { RecallEngine, RecallToken } from '../src/services/practice/recallEngine';
+import { QueueManager, QueueGrade } from '../src/services/practice/queueManager';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -129,6 +130,7 @@ export default function InscribeScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { queueId, book, chapter, verse } = useLocalSearchParams();
   const { currentSession } = useDailyPractice();
   const { profile } = useAuth();
   
@@ -140,14 +142,16 @@ export default function InscribeScreen() {
 
   useEffect(() => {
     const fetchVerse = async () => {
+      const b = book ? parseInt(book as string) : currentSession.verse.bookId;
+      const c = chapter ? parseInt(chapter as string) : currentSession.verse.chapter;
+      const v = verse ? parseInt(verse as string) : currentSession.verse.verse;
+
       const text = await VerseRepository.getVerse(
-        currentSession.verse.bookId,
-        currentSession.verse.chapter,
-        currentSession.verse.verse,
+        b, c, v,
         selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
       );
       setDbVerseText(text);
-      const tokens = RecallEngine.generateRecallPractice(text, 3);
+      const tokens = RecallEngine.generateRecallPractice(text, 3, selectedTranslation);
       setRecallTokens(tokens);
     };
     fetchVerse();
@@ -215,7 +219,24 @@ export default function InscribeScreen() {
     }
   }, [revealed, level]);
 
-  const close = () => router.back();
+  const handleGrade = async (grade: QueueGrade) => {
+    if (queueId) {
+      try {
+        await QueueManager.updateVerseProgress(queueId as string, grade);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (e) {
+        console.error("Error updating SRS progress", e);
+      }
+    }
+    router.back();
+  };
+
+  const close = () => {
+    // If we're not using the queue, just close
+    if (!queueId) {
+      router.back();
+    }
+  };
   
   const choose = (word: string) => {
     if (picked.length >= answers.length || picked.some((p) => validateWord(p, word))) return;
@@ -296,7 +317,7 @@ export default function InscribeScreen() {
       >
         {level === 1 && <LevelOne t={t} verseRef={verseRef} verseText={dbVerseText} onNext={() => setLevel(2)} />}
         {level === 2 && <LevelTwo t={t} recallTokens={recallTokens} answers={answers} options={options} picked={picked} wrong={wrong} onChoose={choose} onReset={() => { setPicked([]); setWrong(false); }} onNext={() => setLevel(3)} />}
-        {level === 3 && <LevelThree t={t} words={words} revealed={revealed} complete={complete} inputRef={inputRef} onType={typeLetter} onFocus={handleFocus} onRestart={() => { setLevel(1); setPicked([]); setRevealed(0); }} onClose={close} />}
+        {level === 3 && <LevelThree t={t} words={words} revealed={revealed} complete={complete} inputRef={inputRef} onType={typeLetter} onFocus={handleFocus} onRestart={() => { setLevel(1); setPicked([]); setRevealed(0); }} onClose={close} onGrade={handleGrade} isQueue={!!queueId} />}
       </ScrollView>
     </View>
   );
@@ -409,7 +430,7 @@ function LevelTwo({ t, recallTokens, answers, options, picked, wrong, onChoose, 
   );
 }
 
-function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, onRestart, onClose }: { t: any, words: string[], revealed: number; complete: boolean; inputRef: React.RefObject<TextInput | null>; onType: (value: string) => void; onFocus: () => void; onRestart: () => void; onClose: () => void }) {
+function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, onRestart, onClose, onGrade, isQueue }: { t: any, words: string[], revealed: number; complete: boolean; inputRef: React.RefObject<TextInput | null>; onType: (value: string) => void; onFocus: () => void; onRestart: () => void; onClose: () => void; onGrade?: (grade: QueueGrade) => void; isQueue?: boolean }) {
   return (
     <Pressable style={styles.levelContainer} onPress={onFocus}>
       <Text style={styles.eyebrow}>{t('inscribe.levelThreeEyebrow')}</Text>
@@ -439,9 +460,26 @@ function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, o
             <Check color={Palette.sage} size={20} />
             <Text style={styles.statusCorrect}>{t('inscribe.isInscribed', { verse: 'John 3:16' })}</Text>
           </View>
-          <SpringButton style={styles.button} onPress={onClose}>
-            <Text style={styles.buttonText}>{t('inscribe.finish')}</Text>
-          </SpringButton>
+          {isQueue && onGrade ? (
+            <View style={styles.gradeContainer}>
+              <Text style={styles.gradePrompt}>How hard was it to remember?</Text>
+              <View style={styles.gradeButtons}>
+                <Pressable style={[styles.gradeBtn, { backgroundColor: '#FEE2E2' }]} onPress={() => onGrade('hard')}>
+                  <Text style={[styles.gradeBtnText, { color: '#B91C1C' }]}>Hard</Text>
+                </Pressable>
+                <Pressable style={[styles.gradeBtn, { backgroundColor: '#FEF3C7' }]} onPress={() => onGrade('good')}>
+                  <Text style={[styles.gradeBtnText, { color: '#B45309' }]}>Good</Text>
+                </Pressable>
+                <Pressable style={[styles.gradeBtn, { backgroundColor: '#D1FAE5' }]} onPress={() => onGrade('easy')}>
+                  <Text style={[styles.gradeBtnText, { color: '#047857' }]}>Easy</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <SpringButton style={styles.button} onPress={onClose}>
+              <Text style={styles.buttonText}>{t('inscribe.finish')}</Text>
+            </SpringButton>
+          )}
           <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]} onPress={onRestart}>
             <Text style={styles.secondaryButtonText}>{t('inscribe.practiceAgain')}</Text>
           </Pressable>
@@ -774,4 +812,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Palette.mutedForeground,
   },
+  gradeContainer: {
+    width: '100%',
+    marginVertical: 12,
+  },
+  gradePrompt: {
+    fontFamily: Typography.sansMedium,
+    fontSize: 14,
+    color: Palette.mutedForeground,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  gradeButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+  },
+  gradeBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gradeBtnText: {
+    fontFamily: Typography.sansBold,
+    fontSize: 15,
+  }
 });

@@ -93,7 +93,7 @@ export class DatabaseManager {
       // 2. Validate DB is not empty/corrupted (0-byte file from a failed copy)
       try {
         await db.getFirstAsync('SELECT 1 FROM verses LIMIT 1');
-      } catch (validationError) {
+      } catch (validationError: any) {
         console.warn(`Database ${dbName} is corrupt or empty (Validation Error: ${validationError.message}). Re-creating...`);
         try { await db.closeAsync(); } catch (e) { }
 
@@ -110,7 +110,7 @@ export class DatabaseManager {
         // Final validation to avoid returning a corrupt DB
         try {
           await db.getFirstAsync('SELECT 1 FROM verses LIMIT 1');
-        } catch (finalError) {
+        } catch (finalError: any) {
           console.error(`Database is STILL corrupt after recreation! finalError: ${finalError.message}`);
           return null; // Return null instead of crashing the app!
         }

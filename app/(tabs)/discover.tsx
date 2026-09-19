@@ -10,6 +10,8 @@ import { BottomSheet } from '../../src/components/BottomSheet';
 
 import { useDiscover } from '../../src/hooks/useDiscover';
 import { useDailyPractice } from '../../src/hooks/useDailyPractice';
+import { QueueManager } from '../../src/services/practice/queueManager';
+import { useAuth } from '../../src/services/authContext';
 
 const topics = ['All', 'Peace', 'Comfort', 'Guidance', 'Growth'];
 const tabsArray = ['Plans', 'Books', 'Verses'];
@@ -41,6 +43,7 @@ export default function DiscoverScreen() {
   const [queuedItem, setQueuedItem] = useState(currentSession.verse.reference);
   const [queued, setQueued] = useState(false);
   const [queueExpanded, setQueueExpanded] = useState(false);
+  const { user } = useAuth();
 
   const searchResults = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -59,11 +62,41 @@ export default function DiscoverScreen() {
   const isSearching = query.trim().length > 0;
   const resultCount = searchResults.plans.length + searchResults.books.length + searchResults.verses.length;
 
-  const handleQueue = (title: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setQueuedItem(title);
-    setQueued(true);
-    setQueueExpanded(true);
+  const parseReference = (ref: string) => {
+    const books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
+    const match = ref.match(/(.+?) (\d+):(\d+)/);
+    if (!match) return { book: 1, chapter: 1, verse: 1 };
+    
+    // Replace "Psalm" with "Psalms" for mapping if needed
+    let bookName = match[1];
+    if (bookName === 'Psalm') bookName = 'Psalms';
+    
+    const book = books.findIndex(b => b.toLowerCase() === bookName.toLowerCase()) + 1;
+    return {
+      book: book > 0 ? book : 1,
+      chapter: parseInt(match[2]),
+      verse: parseInt(match[3])
+    };
+  };
+
+  const handleQueue = async (title: string) => {
+    try {
+      if (!user) {
+        alert("You must be logged in to save to your queue.");
+        return;
+      }
+      
+      const { book, chapter, verse } = parseReference(title);
+      await QueueManager.addToQueue(user.id, book, chapter, verse);
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setQueuedItem(title);
+      setQueued(true);
+      setQueueExpanded(true);
+    } catch (e) {
+      console.error(e);
+      alert("Error adding to queue");
+    }
   };
 
   const beginNow = () => {

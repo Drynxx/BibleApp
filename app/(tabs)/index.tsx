@@ -24,33 +24,57 @@ import { useCovenant } from '../../src/services/covenantContext';
 import { useDailyPractice } from '../../src/hooks/useDailyPractice';
 import { useUserProgress } from '../../src/hooks/useUserProgress';
 import { VerseRepository } from '../../src/services/db/verseRepository';
+import { QueueManager, PracticeQueueItem } from '../../src/services/practice/queueManager';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
   const [started, setStarted] = useState(false);
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user } = useAuth();
   const { activeCovenant, myTodayReview } = useCovenant();
   
   const { currentSession } = useDailyPractice();
   const progress = useUserProgress();
   const [dbVerseText, setDbVerseText] = useState(currentSession.verse.text);
+  const [dueQueueItem, setDueQueueItem] = useState<PracticeQueueItem | null>(null);
+  
+  // Format reference function
+  const formatReference = (book: number, chapter: number, verse: number) => {
+    const books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
+    return `${books[book - 1] || 'Unknown'} ${chapter}:${verse}`;
+  };
 
   const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
 
   React.useEffect(() => {
     const fetchVerse = async () => {
+      let bookId = currentSession.verse.bookId;
+      let chapter = currentSession.verse.chapter;
+      let verse = currentSession.verse.verse;
+      
+      if (user) {
+        const queuedItem = await QueueManager.getDueVerse(user.id);
+        if (queuedItem) {
+          bookId = queuedItem.book;
+          chapter = queuedItem.chapter;
+          verse = queuedItem.verse;
+          setDueQueueItem(queuedItem);
+        }
+      }
+
       const text = await VerseRepository.getVerse(
-        currentSession.verse.bookId,
-        currentSession.verse.chapter,
-        currentSession.verse.verse,
+        bookId,
+        chapter,
+        verse,
         selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
       );
-      setDbVerseText(text);
+      if (text) {
+        setDbVerseText(text);
+      }
     };
     fetchVerse();
-  }, [currentSession, selectedTranslation]);
+  }, [currentSession, selectedTranslation, user]);
 
   const displayName = profile?.displayName || 'Sarah';
   const streak = progress.currentStreak;
@@ -150,7 +174,11 @@ export default function HomeScreen() {
         <View style={styles.verseBlobTwo} />
 
         <View style={styles.verseBadge}>
-          <Text style={styles.verseBadgeText}>{currentSession.verse.reference.toUpperCase()}</Text>
+          <Text style={styles.verseBadgeText}>
+            {dueQueueItem 
+              ? formatReference(dueQueueItem.book, dueQueueItem.chapter, dueQueueItem.verse).toUpperCase() 
+              : currentSession.verse.reference.toUpperCase()}
+          </Text>
         </View>
 
         <Text style={styles.verseQuote}>
@@ -169,7 +197,15 @@ export default function HomeScreen() {
         ]}
         onPress={() => {
           setStarted(true);
-          router.push('/inscribe');
+          router.push({
+            pathname: '/inscribe',
+            params: { 
+              queueId: dueQueueItem?.id,
+              book: dueQueueItem?.book,
+              chapter: dueQueueItem?.chapter,
+              verse: dueQueueItem?.verse
+            }
+          });
         }}
       >
         {isDoneToday || started ? (
