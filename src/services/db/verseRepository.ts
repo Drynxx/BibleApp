@@ -27,7 +27,8 @@ export class VerseRepository {
       );
 
       if (row && row.text) {
-        return row.text;
+        // Strip out pilcrows (¶) and trim any resulting whitespace
+        return row.text.replace(/¶/g, '').trim();
       }
 
       return "Verse not found in the selected translation.";

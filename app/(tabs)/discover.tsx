@@ -38,7 +38,7 @@ export default function DiscoverScreen() {
   const [activeTopic, setActiveTopic] = useState('All');
   const [preview, setPreview] = useState<any>(null);
   const { currentSession } = useDailyPractice();
-  const { packs, library: verseLibrary } = useDiscover();
+  const { packs, library: verseLibrary, isLoading } = useDiscover();
 
   const [queuedItem, setQueuedItem] = useState(currentSession.verse.reference);
   const [queued, setQueued] = useState(false);
@@ -96,6 +96,32 @@ export default function DiscoverScreen() {
     } catch (e) {
       console.error(e);
       alert("Error adding to queue");
+    }
+  };
+
+  const handleStartPlan = async (pack: any) => {
+    try {
+      if (!user) {
+        alert("You must be logged in to start a plan.");
+        return;
+      }
+      
+      const verses = pack.verses_array;
+      if (!verses || !Array.isArray(verses)) {
+        alert("No verses found in this plan.");
+        return;
+      }
+
+      for (const v of verses) {
+        await QueueManager.addToQueue(user.id, v.b, v.c, v.v);
+      }
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setPreview(null);
+      alert(`Plan '${pack.title}' started! Verses have been added to your queue.`);
+    } catch (e) {
+      console.error(e);
+      alert("Error starting plan");
     }
   };
 
@@ -350,6 +376,10 @@ export default function DiscoverScreen() {
                 <ArrowRight color="#FFF" size={16} />
               </Pressable>
             </View>
+          ) : preview?.kind === 'plan' ? (
+            <Pressable style={styles.modalQueueBtn} onPress={() => handleStartPlan(preview)}>
+              <Text style={styles.modalQueueText}>{t('discover.startPlan', 'Start Plan')}</Text>
+            </Pressable>
           ) : (
             <Pressable style={styles.modalQueueBtn} onPress={() => handleQueue(preview?.title)}>
               <Text style={styles.modalQueueText}>{t('discover.addToQueue', 'Add to Queue')}</Text>

@@ -25,6 +25,7 @@ import { useDailyPractice } from '../../src/hooks/useDailyPractice';
 import { useUserProgress } from '../../src/hooks/useUserProgress';
 import { VerseRepository } from '../../src/services/db/verseRepository';
 import { QueueManager, PracticeQueueItem } from '../../src/services/practice/queueManager';
+import { DiscoverService } from '../../src/services/discoverService';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -33,12 +34,13 @@ export default function HomeScreen() {
   const [started, setStarted] = useState(false);
   const { profile, signOut, user } = useAuth();
   const { activeCovenant, myTodayReview } = useCovenant();
-  
+
   const { currentSession } = useDailyPractice();
   const progress = useUserProgress();
   const [dbVerseText, setDbVerseText] = useState(currentSession.verse.text);
   const [dueQueueItem, setDueQueueItem] = useState<PracticeQueueItem | null>(null);
-  
+  const [displayReference, setDisplayReference] = useState(currentSession.verse.reference);
+
   // Format reference function
   const formatReference = (book: number, chapter: number, verse: number) => {
     const books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
@@ -52,7 +54,7 @@ export default function HomeScreen() {
       let bookId = currentSession.verse.bookId;
       let chapter = currentSession.verse.chapter;
       let verse = currentSession.verse.verse;
-      
+
       if (user) {
         const queuedItem = await QueueManager.getDueVerse(user.id);
         if (queuedItem) {
@@ -60,8 +62,26 @@ export default function HomeScreen() {
           chapter = queuedItem.chapter;
           verse = queuedItem.verse;
           setDueQueueItem(queuedItem);
+        } else {
+          // Fallback to Dynamic Daily Verse if queue is empty
+          const dailyVerse = await DiscoverService.getVerseOfTheDay();
+          if (dailyVerse) {
+            bookId = dailyVerse.book;
+            chapter = dailyVerse.chapter;
+            verse = dailyVerse.verse;
+          }
+        }
+      } else {
+        // Not logged in, use Dynamic Daily Verse
+        const dailyVerse = await DiscoverService.getVerseOfTheDay();
+        if (dailyVerse) {
+          bookId = dailyVerse.book;
+          chapter = dailyVerse.chapter;
+          verse = dailyVerse.verse;
         }
       }
+
+      setDisplayReference(formatReference(bookId, chapter, verse));
 
       const text = await VerseRepository.getVerse(
         bookId,
@@ -117,10 +137,10 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.logoBadge, { transform: [{ rotate: '-12deg' }] }]}>
-          <Leaf 
-            color={Palette.gold} 
-            size={30} 
-            strokeWidth={1.8} 
+          <Leaf
+            color={Palette.gold}
+            size={30}
+            strokeWidth={1.8}
           />
         </View>
       </View>
@@ -175,9 +195,7 @@ export default function HomeScreen() {
 
         <View style={styles.verseBadge}>
           <Text style={styles.verseBadgeText}>
-            {dueQueueItem 
-              ? formatReference(dueQueueItem.book, dueQueueItem.chapter, dueQueueItem.verse).toUpperCase() 
-              : currentSession.verse.reference.toUpperCase()}
+            {displayReference.toUpperCase()}
           </Text>
         </View>
 
@@ -199,7 +217,7 @@ export default function HomeScreen() {
           setStarted(true);
           router.push({
             pathname: '/inscribe',
-            params: { 
+            params: {
               queueId: dueQueueItem?.id,
               book: dueQueueItem?.book,
               chapter: dueQueueItem?.chapter,
