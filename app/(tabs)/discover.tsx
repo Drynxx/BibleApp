@@ -79,14 +79,13 @@ export default function DiscoverScreen() {
     };
   };
 
-  const handleQueue = async (title: string) => {
+  const handleQueue = async (title: string, book: number, chapter: number, verse: number) => {
     try {
       if (!user) {
         alert("You must be logged in to save to your queue.");
         return;
       }
       
-      const { book, chapter, verse } = parseReference(title);
       await QueueManager.addToQueue(user.id, book, chapter, verse);
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -113,7 +112,7 @@ export default function DiscoverScreen() {
       }
 
       for (const v of verses) {
-        await QueueManager.addToQueue(user.id, v.b, v.c, v.v);
+        await QueueManager.addToQueue(user.id, v.b, v.c, v.v, pack.id);
       }
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -192,7 +191,7 @@ export default function DiscoverScreen() {
                   {searchResults.plans.length > 0 && (
                     <View style={styles.resultGroup}>
                       <Text style={styles.resultGroupTitle}>{t('discover.plans', 'Plans')}</Text>
-                      {searchResults.plans.map(p => <PlanRow key={p.title} pack={p} onOpen={() => setPreview({ kind: 'plan', ...p })} />)}
+                      {searchResults.plans.map(p => <PlanRow key={p.title} pack={p} onOpen={() => setPreview({ ...p, kind: 'plan', title: p.title, description: p.description, verses: (p as any).verses_preview_string, count: p.verses })} />)}
                     </View>
                   )}
                   {searchResults.books.length > 0 && (
@@ -204,7 +203,7 @@ export default function DiscoverScreen() {
                   {searchResults.verses.length > 0 && (
                     <View style={styles.resultGroup}>
                       <Text style={styles.resultGroupTitle}>{t('discover.verses', 'Verses')}</Text>
-                      {searchResults.verses.map(v => <ReferenceRow key={v.reference} verse={v} onOpen={() => setPreview({ kind: 'verse', title: v.reference, description: v.text, verses: v.reference })} onQueue={() => handleQueue(v.reference)} />)}
+                      {searchResults.verses.map(v => <ReferenceRow key={v.reference} verse={v} onOpen={() => setPreview({ kind: 'verse', title: v.reference, description: v.text, verses: v.reference, book: v.book, chapter: v.chapter, verseNum: v.verse })} onQueue={() => handleQueue(v.reference, v.book, v.chapter, v.verse)} />)}
                     </View>
                   )}
                 </View>
@@ -236,7 +235,7 @@ export default function DiscoverScreen() {
                         <Text style={styles.featuredTitle}>{t('discover.featuredPlan', 'Featured plan')}</Text>
                         <Text style={styles.featuredCount}>{t('discover.versesCount', { count: featuredPack.verses })}</Text>
                       </View>
-                      <Pressable style={styles.featuredCard} onPress={() => setPreview({ kind: 'plan', ...featuredPack })}>
+                      <Pressable style={styles.featuredCard} onPress={() => setPreview({ ...featuredPack, kind: 'plan', title: featuredPack.title, description: featuredPack.description, verses: (featuredPack as any).verses_preview_string, count: featuredPack.verses })}>
                         <Image source={featuredPack.image} style={styles.featuredImage} />
                         <View style={styles.featuredOverlay} />
                         <View style={styles.featuredContent}>
@@ -257,7 +256,7 @@ export default function DiscoverScreen() {
                       <View style={styles.moreList}>
                         {remainingPacks.map((p, i) => (
                           <View key={p.title} style={[i < remainingPacks.length - 1 && styles.moreRowBorder]}>
-                            <PlanRow pack={p} onOpen={() => setPreview({ kind: 'plan', ...p })} />
+                            <PlanRow pack={p} onOpen={() => setPreview({ ...p, kind: 'plan', title: p.title, description: p.description, verses: (p as any).verses_preview_string, count: p.verses })} />
                           </View>
                         ))}
                       </View>
@@ -316,7 +315,7 @@ export default function DiscoverScreen() {
                       <Text style={styles.eyebrow}>{t(`discover.${group === 'For today' ? 'forToday' : 'popular'}`, group)}</Text>
                       <View style={styles.versesList}>
                         {verseLibrary.filter(v => v.group === group).map(v => (
-                          <ReferenceRow key={v.reference} verse={v} onOpen={() => setPreview({ kind: 'verse', title: v.reference, description: v.text, verses: v.reference })} onQueue={() => handleQueue(v.reference)} />
+                          <ReferenceRow key={v.reference} verse={v} onOpen={() => setPreview({ kind: 'verse', title: v.reference, description: v.text, verses: v.reference, book: v.book, chapter: v.chapter, verseNum: v.verse })} onQueue={() => handleQueue(v.reference, v.book, v.chapter, v.verse)} />
                         ))}
                       </View>
                     </View>
@@ -381,7 +380,7 @@ export default function DiscoverScreen() {
               <Text style={styles.modalQueueText}>{t('discover.startPlan', 'Start Plan')}</Text>
             </Pressable>
           ) : (
-            <Pressable style={styles.modalQueueBtn} onPress={() => handleQueue(preview?.title)}>
+            <Pressable style={styles.modalQueueBtn} onPress={() => handleQueue(preview?.title, preview?.book, preview?.chapter, preview?.verseNum)}>
               <Text style={styles.modalQueueText}>{t('discover.addToQueue', 'Add to Queue')}</Text>
             </Pressable>
           )}

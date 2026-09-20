@@ -39,7 +39,7 @@ export default function HomeScreen() {
   const { currentSession } = useDailyPractice();
   const progress = useUserProgress();
   const [dbVerseText, setDbVerseText] = useState(currentSession.verse.text);
-  const [activeQueue, setActiveQueue] = useState<PracticeQueueItem[]>([]);
+  const [activeCollections, setActiveCollections] = useState<any[]>([]);
   const [displayReference, setDisplayReference] = useState(currentSession.verse.reference);
   const [dailyVerseRef, setDailyVerseRef] = useState({ book: currentSession.verse.bookId, chapter: currentSession.verse.chapter, verse: currentSession.verse.verse });
 
@@ -51,40 +51,42 @@ export default function HomeScreen() {
 
   const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
 
-  React.useEffect(() => {
-    const fetchVerse = async () => {
-      let bookId = currentSession.verse.bookId;
-      let chapter = currentSession.verse.chapter;
-      let verse = currentSession.verse.verse;
+  useFocusEffect(
+    useCallback(() => {
+      const fetchVerse = async () => {
+        let bookId = currentSession.verse.bookId;
+        let chapter = currentSession.verse.chapter;
+        let verse = currentSession.verse.verse;
 
-      // Phase 1: Purely dynamic daily verse, ignore queue
-      const dailyVerse = await DiscoverService.getVerseOfTheDay();
-      if (dailyVerse) {
-        bookId = dailyVerse.book;
-        chapter = dailyVerse.chapter;
-        verse = dailyVerse.verse;
-        setDailyVerseRef({ book: bookId, chapter: chapter, verse: verse });
-      }
+        // Phase 1: Purely dynamic daily verse, ignore queue
+        const dailyVerse = await DiscoverService.getVerseOfTheDay();
+        if (dailyVerse) {
+          bookId = dailyVerse.book;
+          chapter = dailyVerse.chapter;
+          verse = dailyVerse.verse;
+          setDailyVerseRef({ book: bookId, chapter: chapter, verse: verse });
+        }
 
-      setDisplayReference(formatReference(bookId, chapter, verse));
+        setDisplayReference(formatReference(bookId, chapter, verse));
 
-      const text = await VerseRepository.getVerse(
-        bookId,
-        chapter,
-        verse,
-        selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
-      );
-      if (text) {
-        setDbVerseText(text);
-      }
+        const text = await VerseRepository.getVerse(
+          bookId,
+          chapter,
+          verse,
+          selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
+        );
+        if (text) {
+          setDbVerseText(text);
+        }
 
-      if (user) {
-        const queue = await QueueManager.getActiveQueue(user.id, 4);
-        setActiveQueue(queue);
-      }
-    };
-    fetchVerse();
-  }, [currentSession, selectedTranslation, user]);
+        if (user) {
+          const collections = await QueueManager.getActiveCollections(user.id);
+          setActiveCollections(collections);
+        }
+      };
+      fetchVerse();
+    }, [currentSession, selectedTranslation, user])
+  );
 
   const displayName = profile?.displayName || 'Sarah';
   const streak = progress.currentStreak;
@@ -237,15 +239,15 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.collectionsGrid}>
-          {activeQueue.map((item, index) => {
-            const progressPct = Math.min(100, Math.round(((item.ease_factor || 1.3) / 2.5) * 100));
+          {activeCollections.map((collection, index) => {
+            const progressPct = Math.min(100, Math.round(collection.progress * 100));
             const image = index % 2 === 0
               ? require('../../assets/images/plans/plan-anxiety.jpg')
               : require('../../assets/images/plans/plan-grief.jpg');
 
             return (
               <Pressable
-                key={item.id}
+                key={collection.planId}
                 style={({ pressed }) => [
                   styles.collectionWideCard,
                   pressed && { opacity: 0.95, transform: [{ scale: 0.98 }] },
@@ -253,10 +255,7 @@ export default function HomeScreen() {
                 onPress={() => router.push({
                   pathname: '/inscribe',
                   params: {
-                    queueId: item.id,
-                    book: item.book,
-                    chapter: item.chapter,
-                    verse: item.verse
+                    planId: collection.planId
                   }
                 })}
               >
@@ -268,10 +267,10 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.collectionMetaRow}>
                   <Text style={styles.collectionTitle} numberOfLines={1}>
-                    {formatReference(item.book, item.chapter, item.verse)}
+                    {collection.title}
                   </Text>
                   <Text style={styles.collectionMetaDot}>·</Text>
-                  <Text style={styles.collectionCountText}>{progressPct}% Mastery</Text>
+                  <Text style={styles.collectionCountText}>{collection.dueCount} {t('home.due', 'due')}</Text>
                 </View>
                 <View style={styles.collectionBottomTrack}>
                   <View style={[styles.collectionBottomBar, { width: `${progressPct}%` }]} />

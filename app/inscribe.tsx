@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Book,
   Check,
+  Flame,
   Leaf,
   MoreVertical,
   RotateCcw,
@@ -130,7 +131,7 @@ export default function InscribeScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { queueId, book, chapter, verse } = useLocalSearchParams();
+  const { queueId, book, chapter, verse, planId } = useLocalSearchParams();
   const { currentSession } = useDailyPractice();
   const { profile } = useAuth();
   
@@ -139,9 +140,26 @@ export default function InscribeScreen() {
     return `${books[bookId - 1] || 'Unknown'} ${chapter}:${verse}`;
   };
 
-  const b = book ? parseInt(book as string) : currentSession.verse.bookId;
-  const c = chapter ? parseInt(chapter as string) : currentSession.verse.chapter;
-  const v = verse ? parseInt(verse as string) : currentSession.verse.verse;
+  const [b, setB] = useState<number>(book ? parseInt(book as string) : currentSession.verse.bookId);
+  const [c, setC] = useState<number>(chapter ? parseInt(chapter as string) : currentSession.verse.chapter);
+  const [v, setV] = useState<number>(verse ? parseInt(verse as string) : currentSession.verse.verse);
+  const [activeQueueId, setActiveQueueId] = useState<string | undefined>(queueId as string);
+  const [isSessionComplete, setIsSessionComplete] = useState(false);
+  const [loadingNext, setLoadingNext] = useState(false);
+
+  useEffect(() => {
+    if (planId && !book && profile?.id) {
+      QueueManager.getDueVerse(profile.id, planId as string).then(due => {
+        if (due) {
+          setB(due.book);
+          setC(due.chapter);
+          setV(due.verse);
+          setActiveQueueId(due.id);
+        }
+      });
+    }
+  }, [planId, book, profile?.id]);
+
   const verseRef = formatReference(b, c, v);
   const [dbVerseText, setDbVerseText] = useState(currentSession.verse.text);
   const [recallTokens, setRecallTokens] = useState<RecallToken[]>([]);
@@ -159,7 +177,7 @@ export default function InscribeScreen() {
       setRecallTokens(tokens);
     };
     fetchVerse();
-  }, [currentSession, selectedTranslation]);
+  }, [b, c, v, selectedTranslation]);
 
   const words = dbVerseText.split(/\s+/);
   const answers = recallTokens.filter(t => t.type === 'blank').map(t => t.value);
@@ -205,9 +223,42 @@ export default function InscribeScreen() {
       description: t('inscribe.menu.removeQueueDesc', 'I no longer want to memorize this verse.'),
       icon: <Trash2 size={18} color="#EF4444" />,
       destructive: true,
-      onPress: () => { close(); }
+      onPress: async () => { 
+        if (activeQueueId) {
+          try {
+            await QueueManager.removeFromQueue(activeQueueId);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch (e) {
+            console.error("Failed to remove verse:", e);
+            alert("Could not remove from queue.");
+            return;
+          }
+        }
+        close(); 
+      }
     }
   ];
+
+  if (planId) {
+    menuOptions.push({
+      label: t('inscribe.menu.clearPlan', 'Clear this Plan'),
+      description: t('inscribe.menu.clearPlanDesc', 'Stop learning this plan and remove its verses from my queue.'),
+      icon: <Trash2 size={18} color="#EF4444" />,
+      destructive: true,
+      onPress: async () => {
+        try {
+          if (profile?.id) {
+            await QueueManager.removePlan(profile.id, planId as string);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            router.push('/');
+          }
+        } catch (e) {
+          console.error("Failed to clear plan:", e);
+          alert("Could not clear plan.");
+        }
+      }
+    });
+  }
 
   useEffect(() => {
     if (level === 3) {
@@ -223,16 +274,49 @@ export default function InscribeScreen() {
     }
   }, [revealed, level]);
 
+  const loadNextVerse = async () => {
+    if (!profile?.id || !planId) {
+      router.back();
+      return;
+    }
+    
+    setLoadingNext(true);
+    try {
+      const due = await QueueManager.getDueVerse(profile.id, planId as string);
+      if (due) {
+        setB(due.book);
+        setC(due.chapter);
+        setV(due.verse);
+        setActiveQueueId(due.id);
+        setLevel(1);
+        setPicked([]);
+        setWrong(false);
+        setRevealed(0);
+      } else {
+        setIsSessionComplete(true);
+      }
+    } catch (e) {
+      console.error(e);
+      router.back();
+    } finally {
+      setLoadingNext(false);
+    }
+  };
+
   const handleGrade = async (grade: QueueGrade) => {
-    if (queueId) {
+    if (activeQueueId) {
       try {
-        await QueueManager.updateVerseProgress(queueId as string, grade);
+        await QueueManager.updateVerseProgress(activeQueueId, grade);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (e) {
         console.error("Error updating SRS progress", e);
       }
     }
-    router.back();
+    if (planId) {
+      loadNextVerse();
+    } else {
+      router.back();
+    }
   };
 
   const close = () => {
@@ -276,6 +360,23 @@ export default function InscribeScreen() {
     }
   };
 
+  if (isSessionComplete) {
+    return (
+      <View style={[styles.container, styles.completeContainer]}>
+        <View style={styles.completeContent}>
+          <View style={styles.completeIcon}>
+            <Flame color={Palette.primary} size={64} fill={Palette.primary} />
+          </View>
+          <Text style={styles.completeTitle}>{t('inscribe.sessionComplete', 'Session Complete!')}</Text>
+          <Text style={styles.completeSubtitle}>{t('inscribe.sessionCompleteDesc', "You've completed your practice for this plan today.")}</Text>
+        </View>
+        <SpringButton style={styles.completeButton} onPress={() => router.push('/')}>
+          <Text style={styles.completeButtonText}>{t('inscribe.returnHome', 'Return Home')}</Text>
+        </SpringButton>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20), paddingBottom: insets.bottom + 20 }]}>
       {/* Header */}
@@ -318,7 +419,7 @@ export default function InscribeScreen() {
       >
         {level === 1 && <LevelOne t={t} verseRef={verseRef} verseText={dbVerseText} onNext={() => setLevel(2)} />}
         {level === 2 && <LevelTwo t={t} recallTokens={recallTokens} answers={answers} options={options} picked={picked} wrong={wrong} onChoose={choose} onReset={() => { setPicked([]); setWrong(false); }} onNext={() => setLevel(3)} />}
-        {level === 3 && <LevelThree t={t} words={words} revealed={revealed} complete={complete} inputRef={inputRef} onType={typeLetter} onFocus={handleFocus} onRestart={() => { setLevel(1); setPicked([]); setRevealed(0); }} onClose={close} onGrade={handleGrade} isQueue={!!queueId} />}
+        {level === 3 && <LevelThree t={t} words={words} revealed={revealed} complete={complete} inputRef={inputRef} onType={typeLetter} onFocus={handleFocus} onRestart={() => { setLevel(1); setPicked([]); setRevealed(0); }} onClose={close} onGrade={handleGrade} isQueue={!!activeQueueId} />}
       </ScrollView>
     </View>
   );
@@ -752,10 +853,58 @@ const styles = StyleSheet.create({
   },
   hiddenInput: {
     position: 'absolute',
+    width: 0,
+    height: 0,
     opacity: 0,
-    width: 1,
-    height: 1,
-    bottom: 0,
+  },
+  completeContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  completeContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  completeIcon: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  completeTitle: {
+    fontFamily: Typography.serifBold,
+    fontSize: 32,
+    color: Palette.foreground,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  completeSubtitle: {
+    fontFamily: Typography.sansMedium,
+    fontSize: 16,
+    color: Palette.mutedForeground,
+    textAlign: 'center',
+    lineHeight: 24,
+    maxWidth: '80%',
+  },
+  completeButton: {
+    width: '100%',
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Palette.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  completeButtonText: {
+    fontFamily: Typography.sansBold,
+    fontSize: 16,
+    color: Palette.background,
   },
   inscriptionContainer: {
     flex: 1,

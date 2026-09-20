@@ -15,9 +15,10 @@ export function useDiscover() {
     async function fetchData() {
       setIsLoading(true);
       
-      const [remotePlans, dailyVerse] = await Promise.all([
+      const [remotePlans, dailyVerse, discoverVerses] = await Promise.all([
         DiscoverService.getPlans(),
-        DiscoverService.getVerseOfTheDay()
+        DiscoverService.getVerseOfTheDay(),
+        DiscoverService.getDiscoverVerses()
       ]);
 
       // Map remote plans to DiscoverPack format
@@ -25,24 +26,42 @@ export function useDiscover() {
         // Just keeping the local dummy images based on some keywords or a default
         let image = require('../../assets/images/plans/plan-direction.jpg');
         if (p.id.includes('anxiety')) image = require('../../assets/images/plans/plan-anxiety.jpg');
-        if (p.id.includes('wisdom')) image = require('../../assets/images/plans/plan-grief.jpg');
+        if (p.id.includes('wisdom') || p.id.includes('trust')) image = require('../../assets/images/plans/plan-grief.jpg');
+
+        // Format the verses array into a readable string (e.g., "John 14:27, Philippians 4:6")
+        let versesArray = p.verses_array;
+        if (typeof versesArray === 'string') {
+          try { versesArray = JSON.parse(versesArray); } catch (e) {}
+        }
+        
+        const formattedVersesString = (Array.isArray(versesArray) ? versesArray : []).map((v: any) => 
+          `${books[v.b - 1]} ${v.c}:${v.v}`
+        ).join(', ');
 
         return {
           id: p.id,
           title: p.title,
           description: p.description,
-          verses: p.verses_array.length,
-          verses_array: p.verses_array,
-          category: 'All', // You could extract a category if you added one to DB
-          image
-        } as unknown as DiscoverPack; // The components might use custom types, we force it
+          verses: Array.isArray(versesArray) ? versesArray.length : 0,
+          verses_array: versesArray,
+          category: 'All', 
+          image,
+          verses_preview_string: formattedVersesString 
+        } as unknown as DiscoverPack; 
       });
 
-      // Build library
-      let newLibrary: any[] = [
-        { id: '2', reference: 'Philippians 4:13', text: 'I can do all this through him who gives me strength.', group: 'Popular', topic: 'Strength', translation: 'KJV' },
-        { id: '3', reference: 'Psalm 23:1', text: 'The Lord is my shepherd, I lack nothing.', group: 'Popular', topic: 'Comfort', translation: 'KJV' },
-      ];
+      // Build library from dynamic discover_verses
+      let newLibrary: any[] = discoverVerses.map(v => ({
+        id: v.id,
+        reference: v.reference,
+        book: v.book,
+        chapter: v.chapter,
+        verse: v.verse,
+        text: v.text,
+        group: v.group_name,
+        topic: v.topic,
+        translation: v.translation
+      }));
 
       // Insert daily verse dynamically
       if (dailyVerse) {
@@ -50,14 +69,17 @@ export function useDiscover() {
         newLibrary.unshift({
           id: dailyVerse.id,
           reference: `${books[dailyVerse.book - 1] || 'Unknown'} ${dailyVerse.chapter}:${dailyVerse.verse}`,
+          book: dailyVerse.book,
+          chapter: dailyVerse.chapter,
+          verse: dailyVerse.verse,
           text: text || 'Could not load verse text.',
           group: 'For today',
           topic: 'Daily',
           translation: 'KJV'
         });
-      } else {
-        // Fallback if no connection
-        newLibrary.unshift({ id: '1', reference: 'Romans 8:28', text: 'And we know that in all things God works for the good...', group: 'For today', topic: 'Hope', translation: 'KJV' });
+      } else if (newLibrary.length === 0) {
+        // Fallback if no connection and no discover verses
+        newLibrary.unshift({ id: '1', reference: 'Romans 8:28', book: 45, chapter: 8, verse: 28, text: 'And we know that in all things God works for the good...', group: 'For today', topic: 'Hope', translation: 'KJV' });
       }
 
       setPacks(mappedPacks.length > 0 ? mappedPacks : [

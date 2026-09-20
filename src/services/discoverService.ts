@@ -17,6 +17,19 @@ export interface DiscoverPlanRow {
   created_at: string;
 }
 
+export interface DiscoverVerseRow {
+  id: string;
+  reference: string;
+  book: number;
+  chapter: number;
+  verse: number;
+  text: string;
+  group_name: string;
+  topic: string;
+  translation: string;
+  is_active: boolean;
+}
+
 export class DiscoverService {
   static async getVerseOfTheDay(): Promise<DailyVerseRow | null> {
     const today = new Date().toISOString().split('T')[0];
@@ -25,7 +38,8 @@ export class DiscoverService {
       .from('daily_verses')
       .select('*')
       .eq('date', today)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (error) {
       console.warn("Could not fetch Verse of the Day", error.message);
@@ -48,6 +62,21 @@ export class DiscoverService {
       return [];
     }
 
+    return data;
+  }
+
+  static async getDiscoverVerses(): Promise<DiscoverVerseRow[]> {
+    const { data, error } = await supabase
+      .from('discover_verses')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      console.warn("Could not fetch Discover Verses", error?.message);
+      return [];
+    }
+    
     return data;
   }
 }
