@@ -1,4 +1,5 @@
 import { useRouter, useFocusEffect } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import {
   ArrowRight,
   Check,
@@ -15,6 +16,7 @@ import {
   Text,
   View,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -51,42 +53,58 @@ export default function HomeScreen() {
 
   const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
 
+  const refetchHomeData = async () => {
+    let bookId = currentSession.verse.bookId;
+    let chapter = currentSession.verse.chapter;
+    let verse = currentSession.verse.verse;
+
+    // Phase 1: Purely dynamic daily verse, ignore queue
+    const dailyVerse = await DiscoverService.getVerseOfTheDay();
+    if (dailyVerse) {
+      bookId = dailyVerse.book;
+      chapter = dailyVerse.chapter;
+      verse = dailyVerse.verse;
+      setDailyVerseRef({ book: bookId, chapter: chapter, verse: verse });
+    }
+
+    setDisplayReference(formatReference(bookId, chapter, verse));
+
+    const text = await VerseRepository.getVerse(
+      bookId,
+      chapter,
+      verse,
+      selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
+    );
+    if (text) {
+      setDbVerseText(text);
+    }
+
+    if (user) {
+      const collections = await QueueManager.getActiveCollections(user.id);
+      setActiveCollections(collections);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
-      const fetchVerse = async () => {
-        let bookId = currentSession.verse.bookId;
-        let chapter = currentSession.verse.chapter;
-        let verse = currentSession.verse.verse;
-
-        // Phase 1: Purely dynamic daily verse, ignore queue
-        const dailyVerse = await DiscoverService.getVerseOfTheDay();
-        if (dailyVerse) {
-          bookId = dailyVerse.book;
-          chapter = dailyVerse.chapter;
-          verse = dailyVerse.verse;
-          setDailyVerseRef({ book: bookId, chapter: chapter, verse: verse });
-        }
-
-        setDisplayReference(formatReference(bookId, chapter, verse));
-
-        const text = await VerseRepository.getVerse(
-          bookId,
-          chapter,
-          verse,
-          selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
-        );
-        if (text) {
-          setDbVerseText(text);
-        }
-
-        if (user) {
-          const collections = await QueueManager.getActiveCollections(user.id);
-          setActiveCollections(collections);
-        }
-      };
-      fetchVerse();
+      refetchHomeData();
     }, [currentSession, selectedTranslation, user])
   );
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    try {
+      await refetchHomeData();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [currentSession, selectedTranslation, user]);
 
   const displayName = profile?.displayName || 'Sarah';
   const streak = progress.currentStreak;
@@ -113,14 +131,22 @@ export default function HomeScreen() {
   ];
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.container}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: Math.max(insets.top + 8, 20), paddingBottom: insets.bottom + 120 },
-      ]}
-      showsVerticalScrollIndicator={false}
+    <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20) }]}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 120 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh} 
+          tintColor={Palette.primary}
+          colors={[Palette.primary]}
+        />
+      }
     >
       {/* Header */}
       <View style={styles.header}>
@@ -281,6 +307,7 @@ export default function HomeScreen() {
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }
 

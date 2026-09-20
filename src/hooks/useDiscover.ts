@@ -11,9 +11,8 @@ export function useDiscover() {
   const [library, setLibrary] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
+  const fetchData = async () => {
+    setIsLoading(true);
       
       const [remotePlans, dailyVerse, discoverVerses] = await Promise.all([
         DiscoverService.getPlans(),
@@ -89,9 +88,11 @@ export function useDiscover() {
       ]);
       setLibrary(newLibrary);
       setIsLoading(false);
-    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
-  return { packs, library, isLoading };
+  return { packs, library, isLoading, refetch: fetchData };
 }

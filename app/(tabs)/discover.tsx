@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, Dimensions, Modal, Animated, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, Dimensions, Modal, Animated, PanResponder, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Search, X, ChevronRight, BookOpen, Plus, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react-native';
@@ -38,7 +38,22 @@ export default function DiscoverScreen() {
   const [activeTopic, setActiveTopic] = useState('All');
   const [preview, setPreview] = useState<any>(null);
   const { currentSession } = useDailyPractice();
-  const { packs, library: verseLibrary, isLoading } = useDiscover();
+  const { packs, library: verseLibrary, isLoading, refetch } = useDiscover();
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    try {
+      await refetch();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const [queuedItem, setQueuedItem] = useState(currentSession.verse.reference);
   const [queued, setQueued] = useState(false);
@@ -131,7 +146,18 @@ export default function DiscoverScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 20) }]}>
-      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        ref={scrollRef} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh} 
+            tintColor={Palette.primary}
+            colors={[Palette.primary]}
+          />
+        }
+      >
 
         {/* Header */}
         <View style={styles.header}>
