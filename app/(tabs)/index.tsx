@@ -301,7 +301,7 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.collectionMetaRow}>
                   <Text style={styles.collectionTitle} numberOfLines={1}>
-                    {collection.planId === 'my_saved_verses' ? String(t('progress.mySavedVerses', 'My Saved Verses')) : String(t(`discover.plansList.${collection.planId}.title`, { defaultValue: collection.title }))}
+                    {collection.planId === 'my_saved_verses' ? String(t('progress.mySavedVerses', 'My Saved Verses')) : (i18n.language === 'ro' && collection.title_ro ? collection.title_ro : collection.title)}
                   </Text>
                   <Text style={styles.collectionMetaDot}>·</Text>
                   <Text style={styles.collectionCountText}>{collection.dueCount} {String(t('home.due', 'due'))}</Text>

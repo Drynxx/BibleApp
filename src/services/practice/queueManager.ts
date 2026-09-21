@@ -114,15 +114,15 @@ export class QueueManager {
     // Also fetch plan titles to map plan_id to title
     const { data: plans } = await supabase
       .from('discover_plans')
-      .select('id, title');
+      .select('id, title, title_ro');
       
-    const planMap: Record<string, string> = {
-      'my_saved_verses': 'My Saved Verses'
+    const planMap: Record<string, { title: string; title_ro?: string }> = {
+      'my_saved_verses': { title: 'My Saved Verses' }
     };
-    plans?.forEach(p => planMap[p.id] = p.title);
+    plans?.forEach(p => planMap[p.id] = { title: p.title, title_ro: p.title_ro });
 
     // Group by plan_id
-    const groups: Record<string, { planId: string; title: string; progressSum: number; dueCount: number; totalVerses: number; nextVerse?: PracticeQueueItem | null }> = {};
+    const groups: Record<string, { planId: string; title: string; title_ro?: string; progressSum: number; dueCount: number; totalVerses: number; nextVerse?: PracticeQueueItem | null }> = {};
     const now = new Date().getTime();
 
     for (const item of queue) {
@@ -130,7 +130,8 @@ export class QueueManager {
       if (!groups[pid]) {
         groups[pid] = {
           planId: pid,
-          title: planMap[pid] || pid,
+          title: planMap[pid]?.title || pid,
+          title_ro: planMap[pid]?.title_ro,
           progressSum: 0,
           dueCount: 0,
           totalVerses: 0,

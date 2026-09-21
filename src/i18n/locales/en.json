@@ -75,8 +75,9 @@
     "startToday": "Start today’s verse",
     "continueJourney": "Continue your journey",
     "sevenVerses": "7 VERSES",
-    "dayStreak": "Day {{streak}} streak",
-    "streakDays": "{{streak}} days"
+    "dayStreak": "{{streak}} Day Streak",
+    "streakDays": "{{streak}} Days",
+    "due": "due"
   },
   "practice": {
     "tapWord": "Tap a word to fill in the blanks",
@@ -205,7 +206,9 @@
       "resetProgress": "Reset Progress",
       "resetProgressDesc": "I totally forgot this one; drop it back to Step 1.",
       "removeQueue": "Remove from Queue",
-      "removeQueueDesc": "I no longer want to memorize this verse."
+      "removeQueueDesc": "I no longer want to memorize this verse.",
+      "clearPlan": "Clear this Plan",
+      "clearPlanDesc": "Stop learning this plan and remove its verses from my queue."
     },
     "levelOneEyebrow": "Level one · Stillness",
     "readReflect": "Read & reflect",

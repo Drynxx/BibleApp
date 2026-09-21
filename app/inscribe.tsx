@@ -137,7 +137,13 @@ export default function InscribeScreen() {
   const { currentSession } = useDailyPractice();
   const { profile } = useAuth();
   
-  const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
+  const defaultTranslation = profile?.translation?.toLowerCase() || 'kjv';
+  const [sessionTranslation, setSessionTranslation] = useState(defaultTranslation);
+  const [translationMenuVisible, setTranslationMenuVisible] = useState(false);
+
+  useEffect(() => {
+    if (profile?.translation) setSessionTranslation(profile.translation.toLowerCase());
+  }, [profile?.translation]);
 
   const formatReference = (bookId: number, chapter: number, verse: number) => {
     const langToUse = i18n.language === 'ro' ? 'vdcc' : 'kjv';
@@ -177,14 +183,14 @@ export default function InscribeScreen() {
     const fetchVerse = async () => {
       const text = await VerseRepository.getVerse(
         b, c, v,
-        selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
+        sessionTranslation as 'kjv' | 'vdcc' | 'cornilescu'
       );
       setDbVerseText(text);
-      const tokens = RecallEngine.generateRecallPractice(text, 3, selectedTranslation);
+      const tokens = RecallEngine.generateRecallPractice(text, 3, sessionTranslation);
       setRecallTokens(tokens);
     };
     fetchVerse();
-  }, [b, c, v, selectedTranslation]);
+  }, [b, c, v, sessionTranslation]);
 
   const words = dbVerseText.split(/\s+/);
   const answers = recallTokens.filter(t => t.type === 'blank').map(t => t.value);
@@ -194,8 +200,8 @@ export default function InscribeScreen() {
   }, [recallTokens]);
   
   const referenceOptions = React.useMemo(() => {
-    return RecallEngine.generateReferenceQuiz(b, c, v, selectedTranslation);
-  }, [b, c, v, selectedTranslation]);
+    return RecallEngine.generateReferenceQuiz(b, c, v, sessionTranslation);
+  }, [b, c, v, sessionTranslation]);
   
   const [level, setLevel] = useState(1);
   const [picked, setPicked] = useState<string[]>([]);
@@ -217,7 +223,10 @@ export default function InscribeScreen() {
       label: t('inscribe.menu.changeTranslation', 'Change Translation'),
       description: t('inscribe.menu.changeTranslationDesc', 'Switch this specific verse to another version.'),
       icon: <Book size={18} color={Palette.foreground} />,
-      onPress: () => { /* TODO: trigger change translation */ }
+      onPress: () => { 
+        setMenuVisible(false);
+        setTimeout(() => setTranslationMenuVisible(true), 300);
+      }
     },
     {
       label: t('inscribe.menu.resetProgress', 'Reset Progress'),
@@ -427,6 +436,28 @@ export default function InscribeScreen() {
         visible={menuVisible} 
         onClose={() => setMenuVisible(false)} 
         options={menuOptions} 
+      />
+
+      <BottomSheetMenu 
+        visible={translationMenuVisible} 
+        onClose={() => setTranslationMenuVisible(false)} 
+        options={[
+          {
+            label: 'KJV',
+            description: 'King James Version',
+            onPress: () => { setSessionTranslation('kjv'); setTranslationMenuVisible(false); }
+          },
+          {
+            label: 'VDCC',
+            description: 'Versiunea Dumitru Cornilescu Corectată',
+            onPress: () => { setSessionTranslation('vdcc'); setTranslationMenuVisible(false); }
+          },
+          {
+            label: 'Cornilescu',
+            description: 'Dumitru Cornilescu',
+            onPress: () => { setSessionTranslation('cornilescu'); setTranslationMenuVisible(false); }
+          }
+        ]} 
       />
 
       <ScrollView 

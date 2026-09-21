@@ -75,8 +75,9 @@
     "startToday": "Începe versetul de azi",
     "continueJourney": "Continuă călătoria",
     "sevenVerses": "7 VERSETE",
-    "dayStreak": "Serie de {{streak}} zile",
-    "streakDays": "{{streak}} zile"
+    "dayStreak": "Seria ta de {{streak}} zile",
+    "streakDays": "{{streak}} Zile",
+    "due": "de recapitulat"
   },
   "practice": {
     "tapWord": "Atinge un cuvânt pentru a completa",
@@ -269,7 +270,9 @@
       "resetProgress": "Resetează Progresul",
       "resetProgressDesc": "Am uitat complet acest verset; întoarce-te la Pasul 1.",
       "removeQueue": "Elimină din Listă",
-      "removeQueueDesc": "Nu mai vreau să memorez acest verset."
+      "removeQueueDesc": "Nu mai vreau să memorez acest verset.",
+      "clearPlan": "Șterge acest plan",
+      "clearPlanDesc": "Oprește învățarea acestui plan și elimină versetele din listă."
     },
     "levelOneEyebrow": "Nivelul unu · Liniște",
     "readReflect": "Citește și reflectează",
