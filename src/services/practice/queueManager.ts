@@ -134,6 +134,7 @@ export class QueueManager {
           progressSum: 0,
           dueCount: 0,
           totalVerses: 0,
+          nextVerse: null as PracticeQueueItem | null,
         };
       }
       
@@ -146,6 +147,19 @@ export class QueueManager {
         const nextReview = item.next_review_at ? new Date(item.next_review_at).getTime() : 0;
         if (nextReview <= now || item.status === 'queued') {
           groups[pid].dueCount += 1;
+          
+          if (!groups[pid].nextVerse) {
+            groups[pid].nextVerse = item as PracticeQueueItem;
+          } else {
+            const currentNext = groups[pid].nextVerse!;
+            // Prefer due items over queued items, and prefer older due items
+            const currentScore = currentNext.status === 'learning' ? (currentNext.next_review_at ? new Date(currentNext.next_review_at).getTime() : 0) : 9999999999999;
+            const itemScore = item.status === 'learning' ? nextReview : 9999999999999;
+            
+            if (itemScore < currentScore) {
+              groups[pid].nextVerse = item as PracticeQueueItem;
+            }
+          }
         }
       }
     }
@@ -155,6 +169,7 @@ export class QueueManager {
       title: g.title,
       progress: g.totalVerses > 0 ? (g.progressSum / g.totalVerses) : 0,
       dueCount: g.dueCount,
+      nextVerse: g.nextVerse,
     }));
   }
 

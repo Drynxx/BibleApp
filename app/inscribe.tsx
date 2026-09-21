@@ -22,6 +22,7 @@ import {
   Text,
   TextInput,
   View,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -149,6 +150,7 @@ export default function InscribeScreen() {
   const [activeQueueId, setActiveQueueId] = useState<string | undefined>(queueId as string);
   const [isSessionComplete, setIsSessionComplete] = useState(false);
   const [loadingNext, setLoadingNext] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(!!planId && !book);
 
   useEffect(() => {
     if (planId && !book && profile?.id) {
@@ -161,6 +163,7 @@ export default function InscribeScreen() {
         } else {
           setIsSessionComplete(true);
         }
+        setIsInitializing(false);
       });
     }
   }, [planId, book, profile?.id]);
@@ -366,6 +369,14 @@ export default function InscribeScreen() {
       inputRef.current?.focus();
     }
   };
+
+  if (isInitializing) {
+    return (
+      <View style={[styles.container, styles.completeContainer]}>
+        <ActivityIndicator size="large" color={Palette.gold} />
+      </View>
+    );
+  }
 
   if (isSessionComplete) {
     return (

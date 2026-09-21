@@ -282,7 +282,13 @@ export default function HomeScreen() {
                 onPress={() => router.push({
                   pathname: '/inscribe',
                   params: {
-                    planId: collection.planId
+                    planId: collection.planId,
+                    ...(collection.nextVerse ? {
+                      book: collection.nextVerse.book,
+                      chapter: collection.nextVerse.chapter,
+                      verse: collection.nextVerse.verse,
+                      queueId: collection.nextVerse.id
+                    } : {})
                   }
                 })}
               >
