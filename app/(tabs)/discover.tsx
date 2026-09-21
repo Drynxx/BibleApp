@@ -372,7 +372,7 @@ export default function DiscoverScreen() {
               <ArrowRight color="#FFF" size={16} />
             </Pressable>
           ) : (
-            <Pressable style={styles.queueActionBtn} onPress={() => handleQueue(queuedItem)}>
+            <Pressable style={styles.queueActionBtn} onPress={() => handleQueue(queuedItem, currentSession.verse.bookId, currentSession.verse.chapter, currentSession.verse.verse)}>
               <Text style={styles.queueActionText}>{t('discover.addToQueue', 'Add to Queue')}</Text>
             </Pressable>
           )}

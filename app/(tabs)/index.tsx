@@ -255,17 +255,18 @@ export default function HomeScreen() {
       </Pressable>
 
       {/* Continue Journey Collections */}
-      <View style={styles.collectionsSection}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('home.continueJourney')}</Text>
-          <Pressable style={styles.seeAllButton} onPress={() => router.push('/(tabs)/discover')}>
-            <Text style={styles.seeAllText}>{t('progress.seeAll')}</Text>
-            <ArrowRight color={Palette.primary} size={15} />
-          </Pressable>
-        </View>
+      {activeCollections.filter(c => c.dueCount > 0).length > 0 && (
+        <View style={styles.collectionsSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('home.continueJourney')}</Text>
+            <Pressable style={styles.seeAllButton} onPress={() => router.push('/(tabs)/discover')}>
+              <Text style={styles.seeAllText}>{t('progress.seeAll')}</Text>
+              <ArrowRight color={Palette.primary} size={15} />
+            </Pressable>
+          </View>
 
-        <View style={styles.collectionsGrid}>
-          {activeCollections.map((collection, index) => {
+          <View style={styles.collectionsGrid}>
+            {activeCollections.filter(c => c.dueCount > 0).map((collection, index) => {
             const progressPct = Math.min(100, Math.round(collection.progress * 100));
             const image = index % 2 === 0
               ? require('../../assets/images/plans/plan-anxiety.jpg')
@@ -306,6 +307,7 @@ export default function HomeScreen() {
           })}
         </View>
       </View>
+      )}
     </ScrollView>
     </View>
   );

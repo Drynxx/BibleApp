@@ -4,6 +4,8 @@ export type RecallToken = {
   options?: string[]; // Includes the correct value + 3 distractors
 };
 
+import { getBookName } from '../../constants/bibleBooks';
+
 const STOP_WORDS_EN = new Set([
   'the', 'and', 'of', 'to', 'unto', 'hath', 'thou', 'a', 'in', 'that', 'is', 'for', 'it', 'with', 'as', 'he', 'his', 'they', 'be', 'not', 'by', 'but', 'have', 'from', 'which', 'their', 'was', 'were', 'all', 'are', 'shall', 'will', 'this', 'on', 'at', 'or', 'an'
 ]);
@@ -88,6 +90,35 @@ export class RecallEngine {
     }
 
     return output;
+  }
+
+  static generateReferenceQuiz(bookId: number, chapter: number, verse: number, translation: string): string[] {
+    const correctName = getBookName(bookId, translation);
+    const correctRef = `${correctName} ${chapter}:${verse}`;
+    
+    const distractors = new Set<string>();
+    distractors.add(correctRef);
+  
+    while (distractors.size < 4) {
+      const randomStrategy = Math.random();
+      let fakeRef = "";
+  
+      if (randomStrategy < 0.33) {
+        // Same book, wrong numbers
+        fakeRef = `${correctName} ${chapter + Math.floor(Math.random() * 3 + 1)}:${verse + Math.floor(Math.random() * 5 + 1)}`;
+      } else if (randomStrategy < 0.66) {
+        // Wrong book, same numbers
+        let fakeBook = Math.floor(Math.random() * 66) + 1;
+        fakeRef = `${getBookName(fakeBook, translation)} ${chapter}:${verse}`;
+      } else {
+        // Totally random
+        let fakeBook = Math.floor(Math.random() * 66) + 1;
+        fakeRef = `${getBookName(fakeBook, translation)} ${Math.floor(Math.random() * 5 + 1)}:${Math.floor(Math.random() * 20 + 1)}`;
+      }
+      distractors.add(fakeRef);
+    }
+  
+    return Array.from(distractors).sort(() => 0.5 - Math.random());
   }
 
   private static generateOptions(correctAnswer: string, distractorPool: string[]): string[] {

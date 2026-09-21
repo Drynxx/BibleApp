@@ -12,6 +12,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react-native';
+import { getBookName } from '../src/constants/bibleBooks';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
@@ -135,9 +136,11 @@ export default function InscribeScreen() {
   const { currentSession } = useDailyPractice();
   const { profile } = useAuth();
   
+  const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
+
   const formatReference = (bookId: number, chapter: number, verse: number) => {
-    const books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
-    return `${books[bookId - 1] || 'Unknown'} ${chapter}:${verse}`;
+    const bookName = getBookName(bookId, selectedTranslation);
+    return `${bookName} ${chapter}:${verse}`;
   };
 
   const [b, setB] = useState<number>(book ? parseInt(book as string) : currentSession.verse.bookId);
@@ -155,6 +158,8 @@ export default function InscribeScreen() {
           setC(due.chapter);
           setV(due.verse);
           setActiveQueueId(due.id);
+        } else {
+          setIsSessionComplete(true);
         }
       });
     }
@@ -163,8 +168,6 @@ export default function InscribeScreen() {
   const verseRef = formatReference(b, c, v);
   const [dbVerseText, setDbVerseText] = useState(currentSession.verse.text);
   const [recallTokens, setRecallTokens] = useState<RecallToken[]>([]);
-
-  const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
 
   useEffect(() => {
     const fetchVerse = async () => {
@@ -185,6 +188,10 @@ export default function InscribeScreen() {
     const allOptions = recallTokens.filter(t => t.type === 'blank').flatMap(t => t.options || []);
     return Array.from(new Set(allOptions)).sort(() => 0.5 - Math.random());
   }, [recallTokens]);
+  
+  const referenceOptions = React.useMemo(() => {
+    return RecallEngine.generateReferenceQuiz(b, c, v, selectedTranslation);
+  }, [b, c, v, selectedTranslation]);
   
   const [level, setLevel] = useState(1);
   const [picked, setPicked] = useState<string[]>([]);
@@ -390,7 +397,7 @@ export default function InscribeScreen() {
         </Pressable>
         
         <View style={styles.progressContainer}>
-          {[1, 2, 3].map((item) => (
+          {[1, 2, 3, 4].map((item) => (
             <View key={item} style={[styles.progressDot, item <= level ? styles.progressDotActive : styles.progressDotInactive]} />
           ))}
         </View>
@@ -419,7 +426,8 @@ export default function InscribeScreen() {
       >
         {level === 1 && <LevelOne t={t} verseRef={verseRef} verseText={dbVerseText} onNext={() => setLevel(2)} />}
         {level === 2 && <LevelTwo t={t} recallTokens={recallTokens} answers={answers} options={options} picked={picked} wrong={wrong} onChoose={choose} onReset={() => { setPicked([]); setWrong(false); }} onNext={() => setLevel(3)} />}
-        {level === 3 && <LevelThree t={t} words={words} revealed={revealed} complete={complete} inputRef={inputRef} onType={typeLetter} onFocus={handleFocus} onRestart={() => { setLevel(1); setPicked([]); setRevealed(0); }} onClose={close} onGrade={handleGrade} isQueue={!!activeQueueId} />}
+        {level === 3 && <LevelThree t={t} words={words} revealed={revealed} complete={complete} inputRef={inputRef} onType={typeLetter} onFocus={handleFocus} onRestart={() => { setLevel(1); setPicked([]); setRevealed(0); }} onNext={() => { setLevel(4); setRevealed(0); }} />}
+        {level === 4 && <LevelFour t={t} words={words} onRestart={() => { setLevel(1); setPicked([]); setRevealed(0); }} onClose={close} onGrade={handleGrade} isQueue={!!activeQueueId} referenceOptions={referenceOptions} correctReference={verseRef} />}
       </ScrollView>
     </View>
   );
@@ -532,7 +540,7 @@ function LevelTwo({ t, recallTokens, answers, options, picked, wrong, onChoose, 
   );
 }
 
-function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, onRestart, onClose, onGrade, isQueue }: { t: any, words: string[], revealed: number; complete: boolean; inputRef: React.RefObject<TextInput | null>; onType: (value: string) => void; onFocus: () => void; onRestart: () => void; onClose: () => void; onGrade?: (grade: QueueGrade) => void; isQueue?: boolean }) {
+function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, onRestart, onNext }: { t: any, words: string[], revealed: number; complete: boolean; inputRef: React.RefObject<TextInput | null>; onType: (value: string) => void; onFocus: () => void; onRestart: () => void; onNext: () => void }) {
   return (
     <Pressable style={styles.levelContainer} onPress={onFocus}>
       <Text style={styles.eyebrow}>{t('inscribe.levelThreeEyebrow')}</Text>
@@ -560,28 +568,12 @@ function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, o
         <View style={styles.finishContainer}>
           <View style={styles.finishStatus}>
             <Check color={Palette.sage} size={20} />
-            <Text style={styles.statusCorrect}>{t('inscribe.isInscribed', { verse: 'John 3:16' })}</Text>
+            <Text style={styles.statusCorrect}>{t('inscribe.wovenTogether', 'Beautifully done.')}</Text>
           </View>
-          {isQueue && onGrade ? (
-            <View style={styles.gradeContainer}>
-              <Text style={styles.gradePrompt}>How hard was it to remember?</Text>
-              <View style={styles.gradeButtons}>
-                <Pressable style={[styles.gradeBtn, { backgroundColor: '#FEE2E2' }]} onPress={() => onGrade('hard')}>
-                  <Text style={[styles.gradeBtnText, { color: '#B91C1C' }]}>Hard</Text>
-                </Pressable>
-                <Pressable style={[styles.gradeBtn, { backgroundColor: '#FEF3C7' }]} onPress={() => onGrade('good')}>
-                  <Text style={[styles.gradeBtnText, { color: '#B45309' }]}>Good</Text>
-                </Pressable>
-                <Pressable style={[styles.gradeBtn, { backgroundColor: '#D1FAE5' }]} onPress={() => onGrade('easy')}>
-                  <Text style={[styles.gradeBtnText, { color: '#047857' }]}>Easy</Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : (
-            <SpringButton style={styles.button} onPress={onClose}>
-              <Text style={styles.buttonText}>{t('inscribe.finish')}</Text>
-            </SpringButton>
-          )}
+          <SpringButton style={styles.button} onPress={onNext}>
+            <Text style={styles.buttonText}>{t('inscribe.continue', 'Continue')}</Text>
+            <ArrowRight color="#fff" size={20} />
+          </SpringButton>
           <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]} onPress={onRestart}>
             <Text style={styles.secondaryButtonText}>{t('inscribe.practiceAgain')}</Text>
           </Pressable>
@@ -593,6 +585,111 @@ function LevelThree({ t, words, revealed, complete, inputRef, onType, onFocus, o
         </Pressable>
       )}
     </Pressable>
+  );
+}
+
+function ReferenceButton({ option, correct, onCorrect }: { option: string; correct: string; onCorrect: () => void }) {
+  const [status, setStatus] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    if (status !== 'idle') return;
+
+    if (option === correct) {
+      setStatus('correct');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onCorrect();
+    } else {
+      setStatus('wrong');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      scale.value = withSpring(0.9, { damping: 10, stiffness: 200 }, () => {
+        scale.value = withSpring(1);
+      });
+      setTimeout(() => setStatus('idle'), 1000);
+    }
+  };
+
+  let bgColor = 'rgba(255,255,255,0.8)';
+  if (status === 'correct') bgColor = '#D1FAE5';
+  if (status === 'wrong') bgColor = '#FEE2E2';
+
+  return (
+    <AnimatedPressable 
+      onPress={handlePress}
+      style={[
+        styles.referenceBtn,
+        { backgroundColor: bgColor },
+        animatedStyle
+      ]}
+    >
+      <Text style={[styles.referenceBtnText, status === 'correct' && { color: '#047857' }, status === 'wrong' && { color: '#B91C1C' }]}>{option}</Text>
+    </AnimatedPressable>
+  );
+}
+
+function LevelFour({ t, words, onRestart, onClose, onGrade, isQueue, referenceOptions, correctReference }: { t: any, words: string[]; onRestart: () => void; onClose: () => void; onGrade?: (grade: QueueGrade) => void; isQueue?: boolean; referenceOptions: string[]; correctReference: string }) {
+  const [passedQuiz, setPassedQuiz] = useState(false);
+
+  return (
+    <View style={styles.levelContainer}>
+      <Text style={styles.eyebrow}>Where is this verse found?</Text>
+      <Text style={styles.title}>{passedQuiz ? correctReference : '???'}</Text>
+      
+      <View style={styles.inscriptionContainer}>
+        <Text style={styles.weaveQuote}>
+          {words.join(" ")}
+        </Text>
+      </View>
+
+      <View style={styles.finishContainer}>
+        {!passedQuiz ? (
+          <View style={{ width: '100%', gap: 12, marginTop: 20 }}>
+            {referenceOptions.map(opt => (
+              <ReferenceButton 
+                key={opt}
+                option={opt}
+                correct={correctReference}
+                onCorrect={() => setPassedQuiz(true)}
+              />
+            ))}
+          </View>
+        ) : (
+          <>
+            <View style={styles.finishStatus}>
+              <Check color={Palette.sage} size={20} />
+              <Text style={styles.statusCorrect}>{t('inscribe.isInscribed', { verse: correctReference })}</Text>
+            </View>
+            {isQueue && onGrade ? (
+              <View style={styles.gradeContainer}>
+                <Text style={styles.gradePrompt}>How hard was it to remember?</Text>
+                <View style={styles.gradeButtons}>
+                  <Pressable style={[styles.gradeBtn, { backgroundColor: '#FEE2E2' }]} onPress={() => onGrade('hard')}>
+                    <Text style={[styles.gradeBtnText, { color: '#B91C1C' }]}>Hard</Text>
+                  </Pressable>
+                  <Pressable style={[styles.gradeBtn, { backgroundColor: '#FEF3C7' }]} onPress={() => onGrade('good')}>
+                    <Text style={[styles.gradeBtnText, { color: '#B45309' }]}>Good</Text>
+                  </Pressable>
+                  <Pressable style={[styles.gradeBtn, { backgroundColor: '#D1FAE5' }]} onPress={() => onGrade('easy')}>
+                    <Text style={[styles.gradeBtnText, { color: '#047857' }]}>Easy</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <SpringButton style={styles.button} onPress={onClose}>
+                <Text style={styles.buttonText}>{t('inscribe.finish')}</Text>
+              </SpringButton>
+            )}
+            <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]} onPress={onRestart}>
+              <Text style={styles.secondaryButtonText}>{t('inscribe.practiceAgain')}</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -878,7 +975,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   completeTitle: {
-    fontFamily: Typography.serifBold,
+    fontFamily: Typography.serifSemiBold,
     fontSize: 32,
     color: Palette.foreground,
     marginBottom: 12,
@@ -987,6 +1084,21 @@ const styles = StyleSheet.create({
   },
   gradeBtnText: {
     fontFamily: Typography.sansBold,
-    fontSize: 15,
-  }
+    fontSize: 14,
+  },
+  referenceBtn: {
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  referenceBtnText: {
+    fontFamily: Typography.serifSemiBold,
+    fontSize: 18,
+    color: Palette.foreground,
+  },
 });
