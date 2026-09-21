@@ -32,6 +32,7 @@
     "sun": "Dum",
     "subtitle": "PAȘI MICI. CREDINȚĂ PROFUNDĂ.",
     "seeAll": "Vezi toate",
+    "mySavedVerses": "Versetele mele",
     "achievement_7day": "Serie de 7 Zile",
     "achievement_firstBook": "Prima Carte Completă",
     "achievement_nightOwl": "Pasăre de Noapte",
@@ -306,6 +307,11 @@
     "isInscribed": "{{verse}} este inscripționat.",
     "finish": "Termină",
     "practiceAgain": "Exersează din nou",
-    "tapHere": "Apasă aici, apoi tastează literele"
+    "tapHere": "Apasă aici, apoi tastează literele",
+    "whereFound": "Unde se găsește acest verset?",
+    "howHard": "Cât de greu ți-a fost să memorezi?",
+    "hard": "Greu",
+    "good": "Bine",
+    "easy": "Ușor"
   }
 }

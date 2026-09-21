@@ -122,7 +122,7 @@ export class QueueManager {
     plans?.forEach(p => planMap[p.id] = p.title);
 
     // Group by plan_id
-    const groups: Record<string, { planId: string; title: string; progressSum: number; dueCount: number; totalVerses: number }> = {};
+    const groups: Record<string, { planId: string; title: string; progressSum: number; dueCount: number; totalVerses: number; nextVerse?: PracticeQueueItem | null }> = {};
     const now = new Date().getTime();
 
     for (const item of queue) {

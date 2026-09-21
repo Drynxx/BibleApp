@@ -12,6 +12,7 @@ import { useDiscover } from '../../src/hooks/useDiscover';
 import { useDailyPractice } from '../../src/hooks/useDailyPractice';
 import { QueueManager } from '../../src/services/practice/queueManager';
 import { useAuth } from '../../src/services/authContext';
+import { getBookName } from '../../src/constants/bibleBooks';
 
 const topics = ['All', 'Peace', 'Comfort', 'Guidance', 'Growth'];
 const tabsArray = ['Plans', 'Books', 'Verses'];
@@ -21,7 +22,8 @@ const oldTestament = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy'
 const newTestament = ['Matthew', 'Mark', 'Luke', 'John', 'Acts', 'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus', 'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John', 'Jude', 'Revelation'];
 
 export default function DiscoverScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const langToUse = i18n.language === 'ro' ? 'vdcc' : 'kjv';
   const insets = useSafeAreaInsets();
   const router = useRouter();
   
@@ -38,7 +40,7 @@ export default function DiscoverScreen() {
   const [activeTopic, setActiveTopic] = useState('All');
   const [preview, setPreview] = useState<any>(null);
   const { currentSession } = useDailyPractice();
-  const { packs, library: verseLibrary, isLoading, refetch } = useDiscover();
+  const { packs, library: verseLibrary, isLoading, refetch } = useDiscover(langToUse);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -217,7 +219,7 @@ export default function DiscoverScreen() {
                   {searchResults.plans.length > 0 && (
                     <View style={styles.resultGroup}>
                       <Text style={styles.resultGroupTitle}>{t('discover.plans', 'Plans')}</Text>
-                      {searchResults.plans.map(p => <PlanRow key={p.title} pack={p} onOpen={() => setPreview({ ...p, kind: 'plan', title: p.title, description: p.description, verses: (p as any).verses_preview_string, count: p.verses })} />)}
+                      {searchResults.plans.map(p => <PlanRow key={p.title} pack={p} onOpen={() => setPreview({ ...p, kind: 'plan', title: p.title, description: p.description, versesArray: p.verses_array, verses: (p as any).verses_preview_string, count: p.verses })} />)}
                     </View>
                   )}
                   {searchResults.books.length > 0 && (
@@ -229,7 +231,7 @@ export default function DiscoverScreen() {
                   {searchResults.verses.length > 0 && (
                     <View style={styles.resultGroup}>
                       <Text style={styles.resultGroupTitle}>{t('discover.verses', 'Verses')}</Text>
-                      {searchResults.verses.map(v => <ReferenceRow key={v.reference} verse={v} onOpen={() => setPreview({ kind: 'verse', title: v.reference, description: v.text, verses: v.reference, book: v.book, chapter: v.chapter, verseNum: v.verse })} onQueue={() => handleQueue(v.reference, v.book, v.chapter, v.verse)} />)}
+                      {searchResults.verses.map(v => <ReferenceRow key={v.reference} verse={v} onOpen={() => setPreview({ kind: 'verse', title: `${getBookName(v.book, langToUse)} ${v.chapter}:${v.verse}`, description: v.text, verses: `${getBookName(v.book, langToUse)} ${v.chapter}:${v.verse}`, book: v.book, chapter: v.chapter, verseNum: v.verse })} onQueue={() => handleQueue(v.reference, v.book, v.chapter, v.verse)} />)}
                     </View>
                   )}
                 </View>
@@ -261,11 +263,11 @@ export default function DiscoverScreen() {
                         <Text style={styles.featuredTitle}>{t('discover.featuredPlan', 'Featured plan')}</Text>
                         <Text style={styles.featuredCount}>{t('discover.versesCount', { count: featuredPack.verses })}</Text>
                       </View>
-                      <Pressable style={styles.featuredCard} onPress={() => setPreview({ ...featuredPack, kind: 'plan', title: featuredPack.title, description: featuredPack.description, verses: (featuredPack as any).verses_preview_string, count: featuredPack.verses })}>
+                      <Pressable style={styles.featuredCard} onPress={() => setPreview({ ...featuredPack, kind: 'plan', title: featuredPack.title, description: featuredPack.description, versesArray: featuredPack.verses_array, verses: (featuredPack as any).verses_preview_string, count: featuredPack.verses })}>
                         <Image source={featuredPack.image} style={styles.featuredImage} />
                         <View style={styles.featuredOverlay} />
                         <View style={styles.featuredContent}>
-                          <Text style={styles.featuredCategory}>{featuredPack.category} · {featuredPack.verses} verses</Text>
+                          <Text style={styles.featuredCategory}>{t(`discover.topics.${featuredPack.category}`, featuredPack.category)} · {t('discover.versesCount', { count: featuredPack.verses })}</Text>
                           <Text style={styles.featuredCardTitle}>{featuredPack.title}</Text>
                           <Text style={styles.featuredCardDesc}>{featuredPack.description}</Text>
                         </View>
@@ -282,7 +284,7 @@ export default function DiscoverScreen() {
                       <View style={styles.moreList}>
                         {remainingPacks.map((p, i) => (
                           <View key={p.title} style={[i < remainingPacks.length - 1 && styles.moreRowBorder]}>
-                            <PlanRow pack={p} onOpen={() => setPreview({ ...p, kind: 'plan', title: p.title, description: p.description, verses: (p as any).verses_preview_string, count: p.verses })} />
+                            <PlanRow pack={p} onOpen={() => setPreview({ ...p, kind: 'plan', title: p.title, description: p.description, versesArray: p.verses_array, verses: (p as any).verses_preview_string, count: p.verses })} />
                           </View>
                         ))}
                       </View>
@@ -390,7 +392,11 @@ export default function DiscoverScreen() {
 
           <View style={styles.modalPreviewBox}>
             <Text style={styles.modalPreviewEyebrow}>{t('discover.preview', 'Preview')}</Text>
-            <Text style={styles.modalPreviewVerses}>{preview?.verses}</Text>
+            <Text style={styles.modalPreviewVerses}>
+              {preview?.kind === 'plan' && preview.versesArray
+                ? preview.versesArray.map((v: any) => `${getBookName(v.b, langToUse)} ${v.c}:${v.v}`).join(', ')
+                : preview?.verses}
+            </Text>
           </View>
 
           {queued && queuedItem === preview?.title ? (
@@ -418,11 +424,12 @@ export default function DiscoverScreen() {
 
 // Subcomponents
 function PlanRow({ pack, onOpen }: { pack: any, onOpen: () => void }) {
+  const { t } = useTranslation();
   return (
     <Pressable style={styles.planRow} onPress={onOpen}>
       <Image source={pack.image} style={styles.planRowImg} />
       <View style={styles.planRowInfo}>
-        <Text style={styles.planRowEyebrow}>{pack.category} · {pack.verses} verses</Text>
+        <Text style={styles.planRowEyebrow}>{t(`discover.topics.${pack.category}`, pack.category)} · {t('discover.versesCount', { count: pack.verses })}</Text>
         <Text style={styles.planRowTitle} numberOfLines={1}>{pack.title}</Text>
         <Text style={styles.planRowDesc} numberOfLines={1}>{pack.description}</Text>
       </View>
@@ -441,11 +448,15 @@ function BookRow({ book, onOpen }: { book: string, onOpen: () => void }) {
 }
 
 function ReferenceRow({ verse, onOpen, onQueue }: { verse: any, onOpen: () => void, onQueue: () => void }) {
+  const { t, i18n } = useTranslation();
+  const langToUse = i18n.language === 'ro' ? 'vdcc' : 'kjv';
+  const formattedRef = `${getBookName(verse.book, langToUse)} ${verse.chapter}:${verse.verse}`;
+
   return (
     <View style={styles.refRow}>
       <Pressable style={styles.refRowMain} onPress={onOpen}>
-        <Text style={styles.refRowEyebrow}>{verse.topic} · {verse.translation}</Text>
-        <Text style={styles.refRowTitle}>{verse.reference}</Text>
+        <Text style={styles.refRowEyebrow}>{t(`discover.topics.${verse.topic}`, verse.topic)} · {verse.translation}</Text>
+        <Text style={styles.refRowTitle}>{formattedRef}</Text>
         <Text style={styles.refRowDesc} numberOfLines={1}>{verse.text}</Text>
       </Pressable>
       <Pressable style={styles.refRowAddBtn} onPress={onQueue}>

@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Palette, Typography } from '@/constants/theme';
 import { useAuth } from '../../src/services/authContext';
+import { getBookName } from '../../src/constants/bibleBooks';
 import { useCovenant } from '../../src/services/covenantContext';
 import { useDailyPractice } from '../../src/hooks/useDailyPractice';
 import { useUserProgress } from '../../src/hooks/useUserProgress';
@@ -33,7 +34,7 @@ import { DiscoverService } from '../../src/services/discoverService';
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [started, setStarted] = useState(false);
   const { profile, signOut, user } = useAuth();
   const { activeCovenant, myTodayReview } = useCovenant();
@@ -45,10 +46,10 @@ export default function HomeScreen() {
   const [displayReference, setDisplayReference] = useState(currentSession.verse.reference);
   const [dailyVerseRef, setDailyVerseRef] = useState({ book: currentSession.verse.bookId, chapter: currentSession.verse.chapter, verse: currentSession.verse.verse });
 
-  // Format reference function
   const formatReference = (book: number, chapter: number, verse: number) => {
-    const books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
-    return `${books[book - 1] || 'Unknown'} ${chapter}:${verse}`;
+    const langToUse = i18n.language === 'ro' ? 'vdcc' : 'kjv';
+    const bookName = getBookName(book, langToUse);
+    return `${bookName} ${chapter}:${verse}`;
   };
 
   const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
@@ -88,7 +89,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       refetchHomeData();
-    }, [currentSession, selectedTranslation, user])
+    }, [currentSession, selectedTranslation, user, i18n.language])
   );
 
   const [refreshing, setRefreshing] = useState(false);
@@ -300,10 +301,10 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.collectionMetaRow}>
                   <Text style={styles.collectionTitle} numberOfLines={1}>
-                    {collection.title}
+                    {collection.planId === 'my_saved_verses' ? String(t('progress.mySavedVerses', 'My Saved Verses')) : String(t(`discover.plansList.${collection.planId}.title`, { defaultValue: collection.title }))}
                   </Text>
                   <Text style={styles.collectionMetaDot}>·</Text>
-                  <Text style={styles.collectionCountText}>{collection.dueCount} {t('home.due', 'due')}</Text>
+                  <Text style={styles.collectionCountText}>{collection.dueCount} {String(t('home.due', 'due'))}</Text>
                 </View>
                 <View style={styles.collectionBottomTrack}>
                   <View style={[styles.collectionBottomBar, { width: `${progressPct}%` }]} />

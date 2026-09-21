@@ -6,7 +6,7 @@ import { VerseRepository } from '../services/db/verseRepository';
 // Book name mapping
 const books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
 
-export function useDiscover() {
+export function useDiscover(activeTranslation: string = 'kjv') {
   const [packs, setPacks] = useState<DiscoverPack[]>([]);
   const [library, setLibrary] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,10 +37,14 @@ export function useDiscover() {
           `${books[v.b - 1]} ${v.c}:${v.v}`
         ).join(', ');
 
+        const isRo = activeTranslation === 'vdcc' || activeTranslation === 'cornilescu';
+        const displayTitle = (isRo && p.title_ro) ? p.title_ro : p.title;
+        const displayDesc = (isRo && p.description_ro) ? p.description_ro : p.description;
+
         return {
           id: p.id,
-          title: p.title,
-          description: p.description,
+          title: displayTitle,
+          description: displayDesc,
           verses: Array.isArray(versesArray) ? versesArray.length : 0,
           verses_array: versesArray,
           category: 'All', 
@@ -50,21 +54,25 @@ export function useDiscover() {
       });
 
       // Build library from dynamic discover_verses
-      let newLibrary: any[] = discoverVerses.map(v => ({
-        id: v.id,
-        reference: v.reference,
-        book: v.book,
-        chapter: v.chapter,
-        verse: v.verse,
-        text: v.text,
-        group: v.group_name,
-        topic: v.topic,
-        translation: v.translation
-      }));
+      let newLibrary: any[] = [];
+      for (const v of discoverVerses) {
+        const localText = await VerseRepository.getVerse(v.book, v.chapter, v.verse, activeTranslation) || v.text;
+        newLibrary.push({
+          id: v.id,
+          reference: v.reference,
+          book: v.book,
+          chapter: v.chapter,
+          verse: v.verse,
+          text: localText,
+          group: v.group_name,
+          topic: v.topic,
+          translation: activeTranslation.toUpperCase()
+        });
+      }
 
       // Insert daily verse dynamically
       if (dailyVerse) {
-        const text = await VerseRepository.getVerse(dailyVerse.book, dailyVerse.chapter, dailyVerse.verse, 'kjv');
+        const text = await VerseRepository.getVerse(dailyVerse.book, dailyVerse.chapter, dailyVerse.verse, activeTranslation);
         newLibrary.unshift({
           id: dailyVerse.id,
           reference: `${books[dailyVerse.book - 1] || 'Unknown'} ${dailyVerse.chapter}:${dailyVerse.verse}`,
@@ -74,11 +82,11 @@ export function useDiscover() {
           text: text || 'Could not load verse text.',
           group: 'For today',
           topic: 'Daily',
-          translation: 'KJV'
+          translation: activeTranslation.toUpperCase()
         });
       } else if (newLibrary.length === 0) {
         // Fallback if no connection and no discover verses
-        newLibrary.unshift({ id: '1', reference: 'Romans 8:28', book: 45, chapter: 8, verse: 28, text: 'And we know that in all things God works for the good...', group: 'For today', topic: 'Hope', translation: 'KJV' });
+        newLibrary.unshift({ id: '1', reference: 'Romans 8:28', book: 45, chapter: 8, verse: 28, text: 'And we know that in all things God works for the good...', group: 'For today', topic: 'Hope', translation: activeTranslation.toUpperCase() });
       }
 
       setPacks(mappedPacks.length > 0 ? mappedPacks : [
@@ -92,7 +100,7 @@ export function useDiscover() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [activeTranslation]);
 
   return { packs, library, isLoading, refetch: fetchData };
 }

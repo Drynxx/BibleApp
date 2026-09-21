@@ -32,6 +32,7 @@
     "sun": "Sun",
     "subtitle": "SMALL STEPS. DEEPER FAITH.",
     "seeAll": "See all",
+    "mySavedVerses": "My Saved Verses",
     "achievement_7day": "7-Day Streak",
     "achievement_firstBook": "First Book Complete",
     "achievement_nightOwl": "Night Owl",
@@ -226,6 +227,11 @@
     "isInscribed": "{{verse}} is inscribed.",
     "finish": "Finish",
     "practiceAgain": "Practice again",
-    "tapHere": "Tap here, then type letters"
+    "tapHere": "Tap here, then type letters",
+    "whereFound": "Where is this verse found?",
+    "howHard": "How hard was it to remember?",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy"
   }
 }

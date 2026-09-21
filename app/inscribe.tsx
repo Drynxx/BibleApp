@@ -130,7 +130,7 @@ const SpringButton: React.FC<SpringButtonProps> = ({ onPress, children, style, d
 };
 
 export default function InscribeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { queueId, book, chapter, verse, planId } = useLocalSearchParams();
@@ -140,7 +140,8 @@ export default function InscribeScreen() {
   const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
 
   const formatReference = (bookId: number, chapter: number, verse: number) => {
-    const bookName = getBookName(bookId, selectedTranslation);
+    const langToUse = i18n.language === 'ro' ? 'vdcc' : 'kjv';
+    const bookName = getBookName(bookId, langToUse);
     return `${bookName} ${chapter}:${verse}`;
   };
 
@@ -647,7 +648,7 @@ function LevelFour({ t, words, onRestart, onClose, onGrade, isQueue, referenceOp
 
   return (
     <View style={styles.levelContainer}>
-      <Text style={styles.eyebrow}>Where is this verse found?</Text>
+      <Text style={styles.eyebrow}>{t('inscribe.whereFound', 'Where is this verse found?')}</Text>
       <Text style={styles.title}>{passedQuiz ? correctReference : '???'}</Text>
       
       <View style={styles.inscriptionContainer}>
@@ -676,16 +677,16 @@ function LevelFour({ t, words, onRestart, onClose, onGrade, isQueue, referenceOp
             </View>
             {isQueue && onGrade ? (
               <View style={styles.gradeContainer}>
-                <Text style={styles.gradePrompt}>How hard was it to remember?</Text>
+                <Text style={styles.gradePrompt}>{t('inscribe.howHard', 'How hard was it to remember?')}</Text>
                 <View style={styles.gradeButtons}>
                   <Pressable style={[styles.gradeBtn, { backgroundColor: '#FEE2E2' }]} onPress={() => onGrade('hard')}>
-                    <Text style={[styles.gradeBtnText, { color: '#B91C1C' }]}>Hard</Text>
+                    <Text style={[styles.gradeBtnText, { color: '#B91C1C' }]}>{t('inscribe.hard', 'Hard')}</Text>
                   </Pressable>
                   <Pressable style={[styles.gradeBtn, { backgroundColor: '#FEF3C7' }]} onPress={() => onGrade('good')}>
-                    <Text style={[styles.gradeBtnText, { color: '#B45309' }]}>Good</Text>
+                    <Text style={[styles.gradeBtnText, { color: '#B45309' }]}>{t('inscribe.good', 'Good')}</Text>
                   </Pressable>
                   <Pressable style={[styles.gradeBtn, { backgroundColor: '#D1FAE5' }]} onPress={() => onGrade('easy')}>
-                    <Text style={[styles.gradeBtnText, { color: '#047857' }]}>Easy</Text>
+                    <Text style={[styles.gradeBtnText, { color: '#047857' }]}>{t('inscribe.easy', 'Easy')}</Text>
                   </Pressable>
                 </View>
               </View>

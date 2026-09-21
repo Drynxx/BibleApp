@@ -12,6 +12,8 @@ export interface DiscoverPlanRow {
   id: string;
   title: string;
   description: string;
+  title_ro?: string;
+  description_ro?: string;
   verses_array: { b: number; c: number; v: number }[];
   is_active: boolean;
   created_at: string;
