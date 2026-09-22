@@ -29,7 +29,7 @@ export class RecallEngine {
    * @param difficultyLevel Determines how many words become blanks. (e.g., 1 = 1 blank, 2 = 2 blanks, etc.)
    * @param translation The translation code to determine the language for distractors.
    */
-  static generateRecallPractice(rawText: string, difficultyLevel: number, translation: string = 'kjv'): RecallToken[] {
+  static generateRecallPractice(rawText: string, difficultyLevel: number, translation: string = 'bsb'): RecallToken[] {
     const isRomanian = translation === 'vdcc' || translation === 'cornilescu';
     const stopWords = isRomanian ? STOP_WORDS_RO : STOP_WORDS_EN;
     const pool = isRomanian ? DISTRACTOR_POOL_RO : DISTRACTOR_POOL_EN;
@@ -92,7 +92,7 @@ export class RecallEngine {
     return output;
   }
 
-  static generateReferenceQuiz(bookId: number, chapter: number, verse: number, translation: string): string[] {
+  static generateReferenceQuiz(bookId: number, chapter: number, verse: number, translation: string = 'bsb'): string[] {
     const correctName = getBookName(bookId, translation);
     const correctRef = `${correctName} ${chapter}:${verse}`;
     

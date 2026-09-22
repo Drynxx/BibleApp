@@ -9,7 +9,7 @@ export class VerseRepository {
     bookId: number, 
     chapter: number, 
     verse: number, 
-    translation: 'kjv' | 'vdcc' | 'cornilescu' = 'kjv'
+    translation: 'kjv' | 'vdcc' | 'cornilescu' | 'bsb' = 'bsb'
   ): Promise<string> {
     try {
       const db = await DatabaseManager.getConnection(translation);

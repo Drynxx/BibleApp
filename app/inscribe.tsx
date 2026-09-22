@@ -137,7 +137,7 @@ export default function InscribeScreen() {
   const { currentSession } = useDailyPractice();
   const { profile } = useAuth();
   
-  const defaultTranslation = profile?.translation?.toLowerCase() || 'kjv';
+  const defaultTranslation = profile?.translation?.toLowerCase() || 'bsb';
   const [sessionTranslation, setSessionTranslation] = useState(defaultTranslation);
   const [translationMenuVisible, setTranslationMenuVisible] = useState(false);
 
@@ -146,7 +146,7 @@ export default function InscribeScreen() {
   }, [profile?.translation]);
 
   const formatReference = (bookId: number, chapter: number, verse: number) => {
-    const langToUse = i18n.language === 'ro' ? 'vdcc' : 'kjv';
+    const langToUse = i18n.language === 'ro' ? 'vdcc' : 'bsb';
     const bookName = getBookName(bookId, langToUse);
     return `${bookName} ${chapter}:${verse}`;
   };
@@ -183,7 +183,7 @@ export default function InscribeScreen() {
     const fetchVerse = async () => {
       const text = await VerseRepository.getVerse(
         b, c, v,
-        sessionTranslation as 'kjv' | 'vdcc' | 'cornilescu'
+        sessionTranslation as 'kjv' | 'vdcc' | 'cornilescu' | 'bsb'
       );
       setDbVerseText(text);
       const tokens = RecallEngine.generateRecallPractice(text, 3, sessionTranslation);
@@ -442,6 +442,11 @@ export default function InscribeScreen() {
         visible={translationMenuVisible} 
         onClose={() => setTranslationMenuVisible(false)} 
         options={[
+          {
+            label: 'BSB',
+            description: 'Berean Standard Bible',
+            onPress: () => { setSessionTranslation('bsb'); setTranslationMenuVisible(false); }
+          },
           {
             label: 'KJV',
             description: 'King James Version',

@@ -11,14 +11,15 @@ export class DatabaseManager {
    * Ensures the requested database exists in the local SQLite directory.
    * If it doesn't exist, it copies it from assets or downloads it from Supabase.
    */
-  static async ensureDbExists(translation: 'kjv' | 'vdcc' | 'cornilescu', forceOverwrite: boolean = false): Promise<boolean> {
+  static async ensureDbExists(translation: 'kjv' | 'vdcc' | 'cornilescu' | 'bsb', forceOverwrite: boolean = false): Promise<boolean> {
     if (Platform.OS === 'web') return false;
     try {
       if (!DB_DIR.exists) {
         DB_DIR.create();
       }
 
-      let dbName = 'kjv.sqlite';
+      let dbName = 'bsb.sqlite';
+      if (translation === 'kjv') dbName = 'kjv_v2.sqlite';
       if (translation === 'vdcc' || translation === 'cornilescu') dbName = 'cornilescu.sqlite';
 
       const destFile = new File(DB_DIR, dbName);
@@ -38,9 +39,9 @@ export class DatabaseManager {
         } catch (e) { }
       }
 
-      if (translation === 'kjv') {
+      if (translation === 'bsb') {
         // Copy from local bundled assets
-        const asset = await Asset.loadAsync(require('../../../assets/db/kjv_v2.sqlite'));
+        const asset = await Asset.loadAsync(require('../../../assets/db/bsb.sqlite'));
         const uri = asset[0].localUri || asset[0].uri;
 
         console.log(`Asset URI resolved: ${uri}`);
@@ -52,11 +53,11 @@ export class DatabaseManager {
           await sourceFile.copy(destFile);
         }
       } else {
-        // Download VDCC/Cornilescu from Supabase public bucket
-        const { data } = supabase.storage.from('bible-translations').getPublicUrl('cornilescu.sqlite');
+        // Download KJV, VDCC or Cornilescu from Supabase public bucket
+        const { data } = supabase.storage.from('bible-translations').getPublicUrl(dbName);
 
         if (!data.publicUrl) {
-          throw new Error("Failed to get public URL for Cornilescu database");
+          throw new Error(`Failed to get public URL for ${dbName} database`);
         }
 
         await File.downloadFileAsync(data.publicUrl, destFile);
@@ -73,9 +74,10 @@ export class DatabaseManager {
    * Returns a SQLite database connection. 
    * It assumes ensureDbExists was already called successfully.
    */
-  static async getConnection(translation: 'kjv' | 'vdcc' | 'cornilescu'): Promise<SQLite.SQLiteDatabase | null> {
+  static async getConnection(translation: 'kjv' | 'vdcc' | 'cornilescu' | 'bsb'): Promise<SQLite.SQLiteDatabase | null> {
     if (Platform.OS === 'web') return null;
-    let dbName = 'kjv.sqlite';
+    let dbName = 'bsb.sqlite';
+    if (translation === 'kjv') dbName = 'kjv_v2.sqlite';
     if (translation === 'vdcc' || translation === 'cornilescu') dbName = 'cornilescu.sqlite';
 
     try {

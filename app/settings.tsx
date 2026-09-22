@@ -180,7 +180,7 @@ export default function SettingsScreen() {
   const [sounds, setSounds] = useState(false);
   const [isDownloadingVDCC, setIsDownloadingVDCC] = useState(false);
 
-  const bibleLang = profile?.translation?.toLowerCase() || 'kjv';
+  const bibleLang = profile?.translation?.toLowerCase() || 'bsb';
 
   const interfaceLang = i18n.language === 'ro' ? 'romanian' : 'english';
 
@@ -294,7 +294,7 @@ export default function SettingsScreen() {
               control={
                 <SegmentedControl
                   options={[
-                    { value: "niv", label: "NIV" },
+                    { value: "bsb", label: "BSB" },
                     { value: "kjv", label: "KJV" },
                     { value: "vdcc", label: "VDCC" },
                   ]}

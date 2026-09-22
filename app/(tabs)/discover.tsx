@@ -23,7 +23,7 @@ const newTestament = ['Matthew', 'Mark', 'Luke', 'John', 'Acts', 'Romans', '1 Co
 
 export default function DiscoverScreen() {
   const { t, i18n } = useTranslation();
-  const langToUse = i18n.language === 'ro' ? 'vdcc' : 'kjv';
+  const langToUse = i18n.language === 'ro' ? 'vdcc' : 'bsb';
   const insets = useSafeAreaInsets();
   const router = useRouter();
   
@@ -267,7 +267,7 @@ export default function DiscoverScreen() {
                         <Image source={featuredPack.image} style={styles.featuredImage} />
                         <View style={styles.featuredOverlay} />
                         <View style={styles.featuredContent}>
-                          <Text style={styles.featuredCategory}>{t(`discover.topics.${featuredPack.category}`, featuredPack.category)} · {t('discover.versesCount', { count: featuredPack.verses })}</Text>
+                          <Text style={styles.featuredCategory}>{t(`discover.topics.${featuredPack.category || 'All'}`, featuredPack.category || 'All') as string} · {t('discover.versesCount', { count: featuredPack.verses }) as string}</Text>
                           <Text style={styles.featuredCardTitle}>{featuredPack.title}</Text>
                           <Text style={styles.featuredCardDesc}>{featuredPack.description}</Text>
                         </View>
@@ -429,7 +429,7 @@ function PlanRow({ pack, onOpen }: { pack: any, onOpen: () => void }) {
     <Pressable style={styles.planRow} onPress={onOpen}>
       <Image source={pack.image} style={styles.planRowImg} />
       <View style={styles.planRowInfo}>
-        <Text style={styles.planRowEyebrow}>{t(`discover.topics.${pack.category}`, pack.category)} · {t('discover.versesCount', { count: pack.verses })}</Text>
+        <Text style={styles.planRowEyebrow}>{t(`discover.topics.${pack.category || 'All'}`, pack.category || 'All') as string} · {t('discover.versesCount', { count: pack.verses }) as string}</Text>
         <Text style={styles.planRowTitle} numberOfLines={1}>{pack.title}</Text>
         <Text style={styles.planRowDesc} numberOfLines={1}>{pack.description}</Text>
       </View>
@@ -449,7 +449,7 @@ function BookRow({ book, onOpen }: { book: string, onOpen: () => void }) {
 
 function ReferenceRow({ verse, onOpen, onQueue }: { verse: any, onOpen: () => void, onQueue: () => void }) {
   const { t, i18n } = useTranslation();
-  const langToUse = i18n.language === 'ro' ? 'vdcc' : 'kjv';
+  const langToUse = i18n.language === 'ro' ? 'vdcc' : 'bsb';
   const formattedRef = `${getBookName(verse.book, langToUse)} ${verse.chapter}:${verse.verse}`;
 
   return (

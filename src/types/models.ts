@@ -49,6 +49,8 @@ export interface DiscoverPack {
   image: any;
   category?: string;
   description?: string;
+  verses_array?: any;
+  verses_preview_string?: string;
 }
 
 export interface LibraryVerse {

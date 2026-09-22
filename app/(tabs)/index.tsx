@@ -47,12 +47,12 @@ export default function HomeScreen() {
   const [dailyVerseRef, setDailyVerseRef] = useState({ book: currentSession.verse.bookId, chapter: currentSession.verse.chapter, verse: currentSession.verse.verse });
 
   const formatReference = (book: number, chapter: number, verse: number) => {
-    const langToUse = i18n.language === 'ro' ? 'vdcc' : 'kjv';
+    const langToUse = i18n.language === 'ro' ? 'vdcc' : 'bsb';
     const bookName = getBookName(book, langToUse);
     return `${bookName} ${chapter}:${verse}`;
   };
 
-  const selectedTranslation = profile?.translation?.toLowerCase() || 'kjv';
+  const selectedTranslation = profile?.translation?.toLowerCase() || 'bsb';
 
   const refetchHomeData = async () => {
     let bookId = currentSession.verse.bookId;
@@ -74,7 +74,7 @@ export default function HomeScreen() {
       bookId,
       chapter,
       verse,
-      selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu'
+      selectedTranslation as 'kjv' | 'vdcc' | 'cornilescu' | 'bsb'
     );
     if (text) {
       setDbVerseText(text);

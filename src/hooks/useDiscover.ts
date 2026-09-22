@@ -6,7 +6,7 @@ import { VerseRepository } from '../services/db/verseRepository';
 // Book name mapping
 const books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
 
-export function useDiscover(activeTranslation: string = 'kjv') {
+export function useDiscover(activeTranslation: string = 'bsb') {
   const [packs, setPacks] = useState<DiscoverPack[]>([]);
   const [library, setLibrary] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,7 +56,7 @@ export function useDiscover(activeTranslation: string = 'kjv') {
       // Build library from dynamic discover_verses
       let newLibrary: any[] = [];
       for (const v of discoverVerses) {
-        const localText = await VerseRepository.getVerse(v.book, v.chapter, v.verse, activeTranslation) || v.text;
+        const localText = await VerseRepository.getVerse(v.book, v.chapter, v.verse, activeTranslation as 'kjv'|'vdcc'|'cornilescu'|'bsb') || v.text;
         newLibrary.push({
           id: v.id,
           reference: v.reference,
@@ -72,7 +72,7 @@ export function useDiscover(activeTranslation: string = 'kjv') {
 
       // Insert daily verse dynamically
       if (dailyVerse) {
-        const text = await VerseRepository.getVerse(dailyVerse.book, dailyVerse.chapter, dailyVerse.verse, activeTranslation);
+        const text = await VerseRepository.getVerse(dailyVerse.book, dailyVerse.chapter, dailyVerse.verse, activeTranslation as 'kjv'|'vdcc'|'cornilescu'|'bsb');
         newLibrary.unshift({
           id: dailyVerse.id,
           reference: `${books[dailyVerse.book - 1] || 'Unknown'} ${dailyVerse.chapter}:${dailyVerse.verse}`,
